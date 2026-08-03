@@ -13,13 +13,15 @@ const OrderBook = ({ market }: { market: string }) => {
     const [lastPrice, setLastPrice] = useState<string | null>(null);
     
     useEffect(() => {
-        // Initial REST Depth Snapshot
-        const fetchInitialDepth = async () => {
+        // REST Depth Snapshot
+        const fetchDepthSnapshot = async () => {
             try {
                 const depth = await getDepth(market);
                 if (depth) {
-                    const validAsks = (depth.asks || []).filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
-                    const validBids = (depth.bids || []).filter((bid: [string, string]) => parseFloat(bid[1]) > 0).reverse();
+                    const rawAsks = depth.asks || (depth as any)?.depth?.asks || [];
+                    const rawBids = depth.bids || (depth as any)?.depth?.bids || [];
+                    const validAsks = rawAsks.filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
+                    const validBids = rawBids.filter((bid: [string, string]) => parseFloat(bid[1]) > 0).reverse();
                     setAsks(validAsks);
                     setBids(validBids);
                     if (validAsks.length > 0) {
@@ -31,12 +33,20 @@ const OrderBook = ({ market }: { market: string }) => {
             }
         };
 
-        fetchInitialDepth();
+        fetchDepthSnapshot();
+
+        const handleOrderUpdate = () => {
+            fetchDepthSnapshot();
+        };
+        window.addEventListener("orderUpdated", handleOrderUpdate);
 
         // Real-Time WebSocket Depth Stream Subscription
         const unsubscribe = wsManager.subscribeDepth(market, (data: DepthData) => {
-            const validAsks = (data.asks || []).filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
-            const validBids = (data.bids || []).filter((bid: [string, string]) => parseFloat(bid[1]) > 0);
+            if (!data) return;
+            const rawAsks = data.asks || [];
+            const rawBids = data.bids || [];
+            const validAsks = rawAsks.filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
+            const validBids = rawBids.filter((bid: [string, string]) => parseFloat(bid[1]) > 0);
 
             setAsks(validAsks);
             setBids(validBids);
@@ -49,6 +59,7 @@ const OrderBook = ({ market }: { market: string }) => {
         });
 
         return () => {
+            window.removeEventListener("orderUpdated", handleOrderUpdate);
             unsubscribe();
         };
     }, [market]);

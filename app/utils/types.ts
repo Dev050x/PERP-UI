@@ -31,11 +31,12 @@ export interface Kline {
 }
 
 export interface Trade {
-    id: number;
-    isBuyerMaker: boolean;
+    id: number | string;
+    isBuyerMaker?: boolean;
     price: string;
     quantity: string;
-    quoteQuantity: string;
+    quoteQuantity?: string;
     timestamp: number;
+    createdAt?: string;
 }
 

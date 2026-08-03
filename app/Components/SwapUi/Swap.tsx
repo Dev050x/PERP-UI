@@ -1,8 +1,11 @@
 "use client"
-import { getDepth } from "@/app/utils/httpClient";
+import { getDepth, getBalanceApi, extractBalance, createOrderApi } from "@/app/utils/httpClient";
+import { getToken } from "@/app/utils/auth";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const Swap = ({ market }: { market: string }) => {
+    const router = useRouter();
     const [side, setSide] = useState<'buy' | 'sell'>('buy');
     const [marketStatus, setMarketStatus] = useState<'limit' | 'market'>('limit');
     const [lastPrice, setLastPrice] = useState<string | null>(null);
@@ -10,6 +13,31 @@ const Swap = ({ market }: { market: string }) => {
     const [quantity, setQuantity] = useState<string>('');
     const [sliderVal, setSliderVal] = useState<number>(0);
     const [leverage, setLeverage] = useState<number>(10);
+    const [availableEquity, setAvailableEquity] = useState<string>("0.00");
+    const [loading, setLoading] = useState(false);
+    const [statusMsg, setStatusMsg] = useState<{ text: string; isError: boolean } | null>(null);
+
+    const fetchEquity = async () => {
+        const token = getToken();
+        if (!token) {
+            setAvailableEquity("0.00");
+            return;
+        }
+        try {
+            const res = await getBalanceApi();
+            const extracted = extractBalance(res);
+            setAvailableEquity(parseFloat(extracted.availableBalance).toFixed(2));
+        } catch (e) {
+            console.error("Failed to fetch available equity in Swap:", e);
+        }
+    };
+
+    useEffect(() => {
+        fetchEquity();
+        const handleBalanceUpdate = () => fetchEquity();
+        window.addEventListener("balanceUpdated", handleBalanceUpdate);
+        return () => window.removeEventListener("balanceUpdated", handleBalanceUpdate);
+    }, []);
 
     useEffect(() => {
         const getDepthData = async () => {
@@ -37,6 +65,74 @@ const Swap = ({ market }: { market: string }) => {
         : "0.00";
 
     const leverageOptions = [1, 2, 5, 10, 20, 50];
+
+    const handleSliderChange = (percent: number) => {
+        setSliderVal(percent);
+        const avail = parseFloat(availableEquity || "0");
+        const currentPrice = parseFloat(price || lastPrice || "0");
+
+        if (avail > 0 && currentPrice > 0) {
+            const marginToUse = avail * (percent / 100);
+            const buyingPower = marginToUse * leverage;
+            const calculatedQty = buyingPower / currentPrice;
+            setQuantity(calculatedQty > 0 ? calculatedQty.toFixed(4) : "0");
+        } else {
+            setQuantity("0");
+        }
+    };
+
+    const handlePlaceOrder = async () => {
+        setStatusMsg(null);
+        const token = getToken();
+        if (!token) {
+            router.push("/signin");
+            return;
+        }
+
+        if (!numericQty || numericQty <= 0) {
+            setStatusMsg({ text: "Please enter a valid quantity", isError: true });
+            return;
+        }
+
+        if (marketStatus === 'limit' && (!numericPrice || numericPrice <= 0)) {
+            setStatusMsg({ text: "Please enter a valid limit price", isError: true });
+            return;
+        }
+
+        const baseMarket = market ? market.split("_")[0] : "SOL";
+        setLoading(true);
+
+        try {
+            const res = await createOrderApi({
+                market: baseMarket,
+                side: side === 'buy' ? "LONG" : "SHORT",
+                type: marketStatus,
+                price: marketStatus === 'limit' ? price : undefined,
+                qty: quantity,
+                margin: marginRequired,
+            });
+
+            if (res?.success) {
+                setStatusMsg({ text: res.msg || "Order placed successfully", isError: false });
+                setQuantity("");
+                if (typeof window !== "undefined") {
+                    window.dispatchEvent(new Event("orderUpdated"));
+                    window.dispatchEvent(new Event("balanceUpdated"));
+                }
+            } else {
+                setStatusMsg({ text: res?.error || res?.msg || "Failed to place order", isError: true });
+            }
+        } catch (err: any) {
+            const errorData = err.response?.data;
+            const rawErr = errorData?.error || errorData?.msg || "Order placement failed";
+            const formatted = typeof rawErr === "string" && (rawErr.includes("user does not deposit") || rawErr.includes("deposit any asset"))
+                ? "Insufficient Balance: Please deposit USDC first"
+                : rawErr;
+            setStatusMsg({ text: formatted, isError: true });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full p-5 justify-between text-[#EAECEF] bg-[#181a20] rounded-[8px]">
@@ -66,6 +162,13 @@ const Swap = ({ market }: { market: string }) => {
                         Sell / Short
                     </button>
                 </div>
+
+                {/* Status Message Banner */}
+                {statusMsg && (
+                    <div className={`p-2.5 rounded-lg text-xs font-semibold ${statusMsg.isError ? "bg-[#3B171E] text-[#F6465D] border border-[#F6465D]/30" : "bg-[#0F3A2C] text-[#00C076] border border-[#00C076]/30"}`}>
+                        {statusMsg.text}
+                    </div>
+                )}
 
                 {/* Order Type Tabs */}
                 <div className="flex items-center gap-4 border-b border-[#2B2F36] pb-2 text-xs font-semibold">
@@ -112,7 +215,7 @@ const Swap = ({ market }: { market: string }) => {
                 {/* Available Equity */}
                 <div className="flex justify-between items-center text-xs px-0.5">
                     <span className="text-[#848E9C]">Available Equity</span>
-                    <span className="font-semibold text-white">$0.00</span>
+                    <span className="font-semibold text-white">${availableEquity} USDC</span>
                 </div>
 
                 {/* Price Input */}
@@ -146,7 +249,7 @@ const Swap = ({ market }: { market: string }) => {
                             placeholder="0"
                             className="w-full h-11 px-3 bg-[#0B0E11] border border-[#2B2F36] rounded-lg text-sm text-white focus:outline-none focus:border-[#424755]"
                         />
-                        <span className="absolute right-3 text-xs text-[#848E9C] font-semibold">{market || "SOL"}</span>
+                        <span className="absolute right-3 text-xs text-[#848E9C] font-semibold">{market ? market.split("_")[0] : "SOL"}</span>
                     </div>
                 </div>
 
@@ -158,15 +261,20 @@ const Swap = ({ market }: { market: string }) => {
                         max="100"
                         step="1"
                         value={sliderVal}
-                        onChange={(e) => setSliderVal(Number(e.target.value))}
+                        onChange={(e) => handleSliderChange(Number(e.target.value))}
                         className="w-full h-1.5 bg-[#2B2F36] rounded-lg appearance-none cursor-pointer accent-[#2EBD85]"
                     />
                     <div className="flex justify-between text-[11px] text-[#848E9C] px-1">
-                        <button type="button" onClick={() => setSliderVal(0)} className="hover:text-white">0%</button>
-                        <button type="button" onClick={() => setSliderVal(25)} className="hover:text-white">25%</button>
-                        <button type="button" onClick={() => setSliderVal(50)} className="hover:text-white">50%</button>
-                        <button type="button" onClick={() => setSliderVal(75)} className="hover:text-white">75%</button>
-                        <button type="button" onClick={() => setSliderVal(100)} className="hover:text-white">100%</button>
+                        {[0, 25, 50, 75, 100].map((pct) => (
+                            <button
+                                key={pct}
+                                type="button"
+                                onClick={() => handleSliderChange(pct)}
+                                className={`hover:text-white transition-colors ${sliderVal === pct ? "text-[#00C076] font-bold" : ""}`}
+                            >
+                                {pct}%
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -190,13 +298,15 @@ const Swap = ({ market }: { market: string }) => {
             {/* Action Button */}
             <button
                 type="button"
-                className={`w-full h-12 rounded-lg text-sm font-bold transition-all shadow-md mt-4 ${
+                disabled={loading}
+                onClick={handlePlaceOrder}
+                className={`w-full h-12 rounded-lg text-sm font-bold transition-all shadow-md mt-4 disabled:opacity-50 ${
                     side === 'buy'
                         ? "bg-[#2EBD85] hover:bg-[#28a774] text-black"
                         : "bg-[#F6465D] hover:bg-[#e03e54] text-white"
                 }`}
             >
-                {side === 'buy' ? "Buy / Long" : "Sell / Short"}
+                {loading ? "Submitting..." : side === 'buy' ? "Buy / Long" : "Sell / Short"}
             </button>
         </div>
     );

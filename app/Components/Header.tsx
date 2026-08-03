@@ -90,14 +90,14 @@ const Header = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 mx-4">
+                    <div className="flex items-center justify-end gap-4 mx-4">
                         {loggedIn ? (
                             <>
                                 {/* Deposit Button */}
                                 <button
                                     type="button"
                                     onClick={() => setIsDepositOpen(true)}
-                                    className="rounded-lg bg-[#202127] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2B2F36] transition-colors"
+                                    className="rounded-lg bg-[#202127] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                                 >
                                     Deposit
                                 </button>
@@ -106,7 +106,7 @@ const Header = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsWithdrawOpen(true)}
-                                    className="rounded-lg bg-white px-3.5 py-1.5 text-xs font-semibold text-[#14151b] hover:bg-[#EAECEF] transition-colors"
+                                    className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-[#14151b] hover:opacity-90 transition-opacity"
                                 >
                                     Withdraw
                                 </button>
@@ -116,9 +116,9 @@ const Header = () => {
                                     <button
                                         type="button"
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className="flex items-center gap-2 bg-[#1A1D24] hover:bg-[#23272F] border border-[#2B2F36] rounded-xl px-3 py-1.5 text-xs font-bold text-white transition-colors cursor-pointer"
+                                        className="rounded-lg bg-[#202127] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer"
                                     >
-                                        <div className="w-5 h-5 rounded-full bg-[#00C076]/20 text-[#00C076] flex items-center justify-center">
+                                        <div className="w-4 h-4 rounded-full bg-[#00C076]/20 text-[#00C076] flex items-center justify-center">
                                             <UserIcon />
                                         </div>
                                         <span>Profile</span>
