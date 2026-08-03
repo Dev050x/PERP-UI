@@ -29,16 +29,13 @@ const page = () => {
                     <div className="h-[524px] bg-[#181a20] rounded-[8px]">
                       <TradeView market={market as string}/>
                     </div>
-                    <div className=" bg-[#181a20] rounded-[8px]">
-                      <Swap market={market as string}/>
-                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col w-[380px] gap-1">
-                <div className="h-[810px] bg-[#181a20] rounded-[8px]">
-                  <Tickers />
+                <div className="h-[700px] bg-[#181a20] rounded-[8px]">
+                  <Swap market={market as string}/>
                 </div>
               </div>
             </div>
