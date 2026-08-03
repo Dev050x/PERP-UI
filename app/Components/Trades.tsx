@@ -28,7 +28,7 @@ const Trades = ({ market, hideHeader = false }: { market: string; hideHeader?: b
                 {
                     trades && trades.map((trade, index) =>
                         <Bid 
-                            price={trade.price} 
+                            price={parseFloat(trade.price).toFixed(2)} 
                             size={trade.quantity} 
                             timestamp={trade.timestamp} 
                             color={trade.isBuyerMaker ? "#2EBD85" : "#F6465D"} 

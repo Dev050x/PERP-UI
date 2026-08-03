@@ -135,22 +135,14 @@ const TableHeader = () => {
 
 const PriceBar = ({ lastPrice }: { lastPrice: string | null }) => {
     return (
-        <div className="sticky bottom-0 z-10 flex flex-col px-3 py-1 ">
-            <div className="flex justify-between">
-                <div className="flex items-center gap-1.5">
-                    <button type="button" className="hover:opacity-90">
-                        <p className="font-medium tabular-nums text-[#F6465D] font-bold">
-                            {lastPrice}
-                        </p>
-                    </button>
-                </div>
-
-                <button
-                    type="button"
-                    className="text-xs font-medium text-[#1E90FF] hover:opacity-80"
+        <div className="sticky bottom-0 z-10 flex flex-col px-3 py-1">
+            <div className="flex items-center gap-1.5">
+                <p 
+                    className="font-bold text-lg tabular-nums"
+                    style={{ color: "oklab(0.667935 0.195332 0.0881307 / 0.9)" }}
                 >
-                    Recenter
-                </button>
+                    {lastPrice ? parseFloat(lastPrice).toFixed(2) : null}
+                </p>
             </div>
         </div>
     )
