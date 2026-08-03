@@ -5,7 +5,10 @@ import AskTable from "./AskTable";
 import BidTable from "./BidTable";
 import { SignalingManager } from "@/app/utils/SiganlingManager";
 
+import Trades from "../Trades";
+
 const OrderBook = ({ market }: { market: string }) => {
+    const [activeTab, setActiveTab] = useState<"book" | "trades">("book");
     const [bids, setBids] = useState<[string, string][] | null>(null);
     const [asks, setAsks] = useState<[string, string][] | null>(null);
     const [lastPrice, setLastPrice] = useState<string | null>(null);
@@ -80,15 +83,41 @@ const OrderBook = ({ market }: { market: string }) => {
     }, [market]);
 
     return (
-        <div className="flex flex-col ">
-            <div className="h-[42px] py-3 mx-3 text-[#EAECEF] font-bold">
-                OderBook
+        <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 h-[42px] px-3 py-2 border-b border-[#2B2F36]">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab("book")}
+                    className={`px-3 py-1 text-xs font-semibold rounded-[6px] transition-colors ${
+                        activeTab === "book"
+                            ? "bg-[#2B2F36] text-[#EAECEF]"
+                            : "text-[#848E9C] hover:text-[#EAECEF]"
+                    }`}
+                >
+                    Book
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab("trades")}
+                    className={`px-3 py-1 text-xs font-semibold rounded-[6px] transition-colors ${
+                        activeTab === "trades"
+                            ? "bg-[#2B2F36] text-[#EAECEF]"
+                            : "text-[#848E9C] hover:text-[#EAECEF]"
+                    }`}
+                >
+                    Trades
+                </button>
             </div>
-            <hr className="text-[#424755]" />
-            <TableHeader />
-            <div>{asks && <AskTable asks={asks} />}</div>
-            <PriceBar lastPrice={lastPrice} />
-            <div>{bids && <BidTable bids={bids} />}</div>
+            {activeTab === "book" ? (
+                <>
+                    <TableHeader />
+                    <div>{asks && <AskTable asks={asks} />}</div>
+                    <PriceBar lastPrice={lastPrice} />
+                    <div>{bids && <BidTable bids={bids} />}</div>
+                </>
+            ) : (
+                <Trades market={market} hideHeader={true} />
+            )}
         </div>
     )
 }

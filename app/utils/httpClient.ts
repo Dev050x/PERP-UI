@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Depth, Kline, Ticker, Trade } from "./types";
 
-const BASE_URL = "https://proxy-server-dyjk.onrender.com/api/v1";
+const BASE_URL = "http://localhost:3000/api/v1";
 
 //need to create -> depth endpoint - https://api.backpack.exchange/api/v1/depth?symbol=SOL_USDC  type done
 export async function getDepth(market: string): Promise<Depth> {

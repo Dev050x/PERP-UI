@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { getTrades } from "../utils/httpClient"
 import { Trade } from "../utils/types";
 
-const Trades = ({ market }: { market: string }) => {
+const Trades = ({ market, hideHeader = false }: { market: string; hideHeader?: boolean }) => {
     const [trades, setTrades] = useState<Trade[] | null>(null);
     useEffect(() => {
         const trades = async () => {
@@ -15,10 +15,14 @@ const Trades = ({ market }: { market: string }) => {
 
     return (
         <div className="flex flex-col ">
-            <div className="h-[42px] py-3 mx-3 text-[#EAECEF] font-bold">
-                Market Trades
-            </div>
-            <hr className="text-[#424755]" />
+            {!hideHeader && (
+                <>
+                    <div className="h-[42px] py-3 mx-3 text-[#EAECEF] font-bold">
+                        Market Trades
+                    </div>
+                    <hr className="text-[#424755]" />
+                </>
+            )}
             <TableHeader />
             <>
                 {

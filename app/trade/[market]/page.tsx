@@ -4,7 +4,6 @@ import MarketBar from "@/app/Components/MarketBar";
 import OrderBook from "@/app/Components/OrederBook/OrderBook";
 import Swap from "@/app/Components/SwapUi/Swap";
 import Tickers from "@/app/Components/Tickers";
-import Trades from "@/app/Components/Trades";
 import TradeView from "@/app/Components/TradeView";
 import { useParams } from "next/navigation";
 
@@ -38,11 +37,8 @@ const page = () => {
               </div>
 
               <div className="flex flex-col w-[380px] gap-1">
-                <div className="h-[419px] bg-[#181a20] rounded-[8px]">
+                <div className="h-[810px] bg-[#181a20] rounded-[8px]">
                   <Tickers />
-                </div>
-                <div className="h-[480px] bg-[#181a20] rounded-[8px]">
-                  <Trades market={market as string}/>
                 </div>
               </div>
             </div>
