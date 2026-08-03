@@ -36,14 +36,14 @@ const Swap = ({ market }: { market: string }) => {
         <div className="flex flex-col h-full p-5 justify-between text-[#EAECEF] bg-[#181a20] rounded-[8px]">
             <div className="flex flex-col gap-4">
                 {/* Side Selector Tabs (Buy / Long vs Sell / Short) */}
-                <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#0B0E11] rounded-xl">
+                <div className="grid grid-cols-2 bg-[#0B0E11] rounded-xl gap-0.5">
                     <button
                         type="button"
                         onClick={() => setSide('buy')}
                         className={`h-11 text-sm font-semibold rounded-lg transition-all ${
                             side === 'buy'
-                                ? "bg-[#0F3A2C] text-[#00C076]"
-                                : "text-[#848E9C] hover:text-white"
+                                ? "bg-[#122322] text-[#00C076]"
+                                : "bg-transparent text-[#848E9C] hover:text-white"
                         }`}
                     >
                         Buy / Long
@@ -53,8 +53,8 @@ const Swap = ({ market }: { market: string }) => {
                         onClick={() => setSide('sell')}
                         className={`h-11 text-sm font-semibold rounded-lg transition-all ${
                             side === 'sell'
-                                ? "bg-[#501A24] text-[#F6465D]"
-                                : "text-[#848E9C] hover:text-white"
+                                ? "bg-[#38161F] text-[#F6465D]"
+                                : "bg-transparent text-[#848E9C] hover:text-white"
                         }`}
                     >
                         Sell / Short
