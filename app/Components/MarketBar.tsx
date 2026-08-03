@@ -1,18 +1,5 @@
-"use client"
-import { useEffect, useState } from "react"
-import { Ticker } from "../utils/types";
-import { getTicker } from "../utils/httpClient";
-
 const MarketBar = ({ market }: { market: string }) => {
-    const [ticker, setTicker] = useState<Ticker | undefined>();
-    useEffect(() => {
-        const fetchTicker = async () => {
-            const t = await getTicker(market);
-            setTicker(t);
-        };
-        fetchTicker();
-
-    }, [market]);
+    const symbol = market ? market.toUpperCase() : "SOL_USDC";
 
     return (
         <div className="flex items-center flex-row bg-base-background-l1 relative w-full rounded-lg">
@@ -26,7 +13,7 @@ const MarketBar = ({ market }: { market: string }) => {
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="flex mr-1">
-                                        <a href={`/trade/${ticker?.symbol}`}>
+                                        <a href={`/trade/${symbol}`}>
                                             <div className="flex items-center min-w-max gap-2">
                                                 <div className="relative shrink-0">
                                                     <img
@@ -38,7 +25,7 @@ const MarketBar = ({ market }: { market: string }) => {
                                                     />
                                                 </div>
                                                 <p className="font-bold text-nowrap text-[#EAECEF]">
-                                                   {ticker?.symbol}
+                                                   {symbol}
                                                 </p>
                                             </div>
                                         </a>
@@ -51,11 +38,11 @@ const MarketBar = ({ market }: { market: string }) => {
                             <div className="flex flex-col justify-center">
                                 <button type="button" className="cursor-help">
                                     <p className="text-lg font-medium tabular-nums text-[#F6465D]">
-                                        {ticker?.firstPrice}
+                                        --
                                     </p>
                                 </button>
                                 <p className="text-sm font-normal tabular-nums text-[#EAECEF]">
-                                    {ticker?.firstPrice}
+                                    --
                                 </p>
                             </div>
                             <div className="flex flex-col justify-center">
@@ -63,7 +50,7 @@ const MarketBar = ({ market }: { market: string }) => {
                                     24H Change
                                 </p>
                                 <span className="mt-1 text-sm font-normal tabular-nums text-[#0ECB81]">
-                                    {ticker?.priceChange} {ticker?.priceChange}
+                                    +0.00%
                                 </span>
                             </div>
                             <div className="flex flex-col justify-center">
@@ -71,7 +58,7 @@ const MarketBar = ({ market }: { market: string }) => {
                                     24H High
                                 </p>
                                 <span className="mt-1 text-sm font-normal tabular-nums text-[#EAECEF]">
-                                    {ticker?.high}
+                                    --
                                 </span>
                             </div>
                             <div className="flex flex-col justify-center">
@@ -79,7 +66,7 @@ const MarketBar = ({ market }: { market: string }) => {
                                     24H Low
                                 </p>
                                 <span className="mt-1 text-sm font-normal tabular-nums text-[#EAECEF]">
-                                    {ticker?.low}
+                                    --
                                 </span>
                             </div>
                             <button
@@ -91,7 +78,7 @@ const MarketBar = ({ market }: { market: string }) => {
                                         24H Volume (USD)
                                     </p>
                                     <span className="mt-1 text-sm font-normal tabular-nums text-[#EAECEF]">
-                                        {ticker?.quoteVolume}
+                                        --
                                     </span>
                                 </div>
                             </button>

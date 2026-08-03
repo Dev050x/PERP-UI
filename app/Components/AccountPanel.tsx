@@ -1,5 +1,7 @@
 "use client"
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getBalanceApi, extractBalance, BalanceData } from "../utils/httpClient";
+import { getToken } from "../utils/auth";
 
 type TabType =
   | "Balances"
@@ -16,6 +18,29 @@ const tabs: TabType[] = [
 
 const AccountPanel = ({ market }: { market: string }) => {
   const [activeTab, setActiveTab] = useState<TabType>("Balances");
+  const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const res = await getBalanceApi();
+        const extracted = extractBalance(res);
+        setBalanceData(extracted);
+      } catch (e) {
+        console.error("Failed to fetch account panel balance:", e);
+      }
+    };
+    fetchBalance();
+    const handleBalanceUpdate = () => fetchBalance();
+    window.addEventListener("balanceUpdated", handleBalanceUpdate);
+    return () => window.removeEventListener("balanceUpdated", handleBalanceUpdate);
+  }, []);
+
+  const formattedAvail = balanceData?.availableBalance ? parseFloat(balanceData.availableBalance).toFixed(2) : "0.00";
+  const formattedLocked = balanceData?.lockedBalance ? parseFloat(balanceData.lockedBalance).toFixed(2) : "0.00";
+  const totalBalance = (parseFloat(formattedAvail) + parseFloat(formattedLocked)).toFixed(2);
 
   return (
     <div className="flex flex-col h-full bg-[#181a20] rounded-[8px] overflow-hidden text-[#EAECEF]">
@@ -49,15 +74,9 @@ const AccountPanel = ({ market }: { market: string }) => {
             </div>
             <div className="grid grid-cols-4 items-center text-xs py-2.5 px-2 border-b border-[#23272E]/40 hover:bg-[#2B2F36]/30 transition-colors">
               <span className="font-semibold text-white text-left">USDC</span>
-              <span className="text-right tabular-nums text-[#EAECEF]">0.00</span>
-              <span className="text-right tabular-nums text-[#EAECEF]">0.00</span>
-              <span className="text-right tabular-nums text-[#EAECEF]">0.00</span>
-            </div>
-            <div className="grid grid-cols-4 items-center text-xs py-2.5 px-2 border-b border-[#23272E]/40 hover:bg-[#2B2F36]/30 transition-colors">
-              <span className="font-semibold text-white text-left">{market || "SOL"}</span>
-              <span className="text-right tabular-nums text-[#EAECEF]">0.00</span>
-              <span className="text-right tabular-nums text-[#EAECEF]">0.00</span>
-              <span className="text-right tabular-nums text-[#EAECEF]">0.00</span>
+              <span className="text-right tabular-nums text-[#EAECEF]">${totalBalance}</span>
+              <span className="text-right tabular-nums text-[#EAECEF]">${formattedAvail}</span>
+              <span className="text-right tabular-nums text-[#EAECEF]">${formattedLocked}</span>
             </div>
           </div>
         )}

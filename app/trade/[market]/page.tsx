@@ -4,7 +4,6 @@ import Header from "@/app/Components/Header";
 import MarketBar from "@/app/Components/MarketBar";
 import OrderBook from "@/app/Components/OrederBook/OrderBook";
 import Swap from "@/app/Components/SwapUi/Swap";
-import Tickers from "@/app/Components/Tickers";
 import TradeView from "@/app/Components/TradeView";
 import { useParams } from "next/navigation";
 

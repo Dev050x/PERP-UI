@@ -1,33 +1,65 @@
 import axios from "axios";
+import { api, BASE_URL } from "./auth";
 import { Depth, Kline, Ticker, Trade } from "./types";
 
-const BASE_URL = "http://localhost:3000/api/v1";
-
-//need to create -> depth endpoint - https://api.backpack.exchange/api/v1/depth?symbol=SOL_USDC  type done
+// Market Data Endpoints
 export async function getDepth(market: string): Promise<Depth> {
-    const response = await axios.get(`${BASE_URL}/depth?symbol=${market}`);    
-    return response.data;
-}
-//neeed to create -> ticker endpoint - https://api.backpack.exchange/api/v1/tickers type done
-export async function getTickers(): Promise<Ticker[]> {
-    const response = await axios.get(`${BASE_URL}/tickers`);
+    const response = await axios.get(`${BASE_URL}/depth/${market}`);    
     return response.data;
 }
 
-//need to create -> kline endpoint - https://api.backpack.exchange/api/v1/klines?symbol=SOL_USDC&interval=1month&startTime=1698777000 type done
-export async function getKlines(market: string, interval: string, startTime: string): Promise<Kline[]> {
-    const response = await axios.get(`${BASE_URL}/klines?symbol=${market}&interval=${interval}&startTime=${startTime}`);
+export async function getKlines(market: string, interval: string = "1m", startTime?: string | number, limit: number = 500): Promise<Kline[]> {
+    let url = `${BASE_URL}/candles/${market}?interval=${interval}&limit=${limit}`;
+    if (startTime) {
+        url += `&startTime=${startTime}`;
+    }
+    const response = await axios.get(url);
+    return response.data?.data?.candles || response.data;
+}
+
+export async function getTrades(market: string, limit: string = "50"): Promise<Trade[]> {
+    const response = await axios.get(`${BASE_URL}/trades/${market}?limit=${limit}`);
+    return response.data?.data?.trades || response.data;
+}
+
+// Authentication Endpoints
+export async function signUpApi(username: string, password: string) {
+    const response = await api.post("/sign-up", { username, password });
     return response.data;
 }
 
-//need to create -> trader endpoint - https://api.backpack.exchange/api/v1/trades?symbol=SOL_USDC&limit250  type done
-export async function getTrades(market: string, limit: string): Promise<Trade[]> {
-    const response = await axios.get(`${BASE_URL}/trades?symbol=${market}&limit=${limit}`);
+export async function signInApi(username: string, password: string) {
+    const response = await api.post("/sign-in", { username, password });
     return response.data;
 }
 
-export async function getTicker(market: string): Promise<Ticker | undefined> {
-    const tickers = await getTickers();
-    const ticker = tickers.find(t => t.symbol === market);
-    return ticker;
+// Balance & Wallet Endpoints
+export interface BalanceData {
+    availableBalance: string;
+    lockedBalance: string;
+}
+
+export function extractBalance(res: any): BalanceData {
+    const rawObj = res?.data?.userBalance ?? res?.data ?? res?.userBalance ?? res ?? {};
+    const avail = rawObj.availableBalance ?? "0";
+    const locked = rawObj.lockedBalance ?? "0";
+    return {
+        availableBalance: typeof avail === "number" ? avail.toString() : (avail || "0"),
+        lockedBalance: typeof locked === "number" ? locked.toString() : (locked || "0"),
+    };
+}
+
+export async function getBalanceApi(): Promise<{ data: any }> {
+    const response = await api.get("/balance");
+    return response.data;
+}
+
+export async function depositApi(amount: string) {
+    const response = await api.post("/onramp", { amount });
+    return response.data;
+}
+
+export async function withdrawApi(amount: string) {
+    const response = await api.post("/withdraw", { amount });
+    return response.data;
 }

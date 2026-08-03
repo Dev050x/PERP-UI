@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signUpApi } from "../utils/httpClient";
 
 const EyeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -19,25 +21,49 @@ const EyeOffIcon = () => (
 );
 
 const SignupPage = () => {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg("");
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+      setErrorMsg("Passwords do not match.");
       return;
     }
-    alert("Account created successfully!");
+
+    setLoading(true);
+    try {
+      const res = await signUpApi(email, password);
+      if (res?.success) {
+        router.push("/signin");
+      } else {
+        setErrorMsg(res?.msg || res?.error || "Registration failed.");
+      }
+    } catch (err: any) {
+      const errorData = err.response?.data;
+      setErrorMsg(errorData?.msg || errorData?.error || "User already exists or registration failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#0B0E11] flex items-center justify-center p-4 font-sans text-white">
       <div className="w-full max-w-[440px] bg-[#14161C] border border-[#23262F] rounded-2xl p-9 flex flex-col items-center shadow-2xl">
         <h1 className="text-2xl font-bold text-white mb-7">Create account</h1>
+
+        {errorMsg && (
+          <div className="w-full mb-4 p-3 bg-[#3B171E] border border-[#F6465D]/30 rounded-xl text-sm text-[#F6465D]">
+            {errorMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
           {/* Email Input */}

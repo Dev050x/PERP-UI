@@ -1,5 +1,5 @@
 "use client"
-import { getTicker } from "@/app/utils/httpClient";
+import { getDepth } from "@/app/utils/httpClient";
 import { useEffect, useState } from "react";
 
 const Swap = ({ market }: { market: string }) => {
@@ -13,11 +13,17 @@ const Swap = ({ market }: { market: string }) => {
 
     useEffect(() => {
         const getDepthData = async () => {
-            const ticker = await getTicker(market);
-            const priceVal = ticker?.lastPrice;
-            setLastPrice(priceVal || null);
-            if (priceVal && !price) {
-                setPrice(parseFloat(priceVal).toFixed(2));
+            try {
+                const depth = await getDepth(market);
+                const firstPrice = depth?.asks?.[0]?.[0] || depth?.bids?.[0]?.[0];
+                if (firstPrice) {
+                    setLastPrice(firstPrice);
+                    if (!price) {
+                        setPrice(parseFloat(firstPrice).toFixed(2));
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch depth for Swap:", e);
             }
         };
         getDepthData();

@@ -1,10 +1,9 @@
 "use client"
 import { useEffect, useState } from "react";
-import { getDepth, getTicker } from "../../utils/httpClient";
+import { getDepth } from "../../utils/httpClient";
+import { wsManager, DepthData } from "@/app/utils/wsClient";
 import AskTable from "./AskTable";
 import BidTable from "./BidTable";
-import { SignalingManager } from "@/app/utils/SiganlingManager";
-
 import Trades from "../Trades";
 
 const OrderBook = ({ market }: { market: string }) => {
@@ -14,72 +13,44 @@ const OrderBook = ({ market }: { market: string }) => {
     const [lastPrice, setLastPrice] = useState<string | null>(null);
     
     useEffect(() => {
-        const getDepthData = async () => {
-            const depth = await getDepth(market);
-            setAsks(depth.asks.filter((ask: [string, string]) => parseFloat(ask[1]) > 0));
-            setBids(depth.bids.filter((bid: [string, string]) => parseFloat(bid[1]) > 0).reverse());
-            const ticker = await getTicker(market);
-            const lastPrice = ticker?.lastPrice;
-            setLastPrice(lastPrice || null);
-        }
-
-        SignalingManager.getInstance().registerCallback("depth", (data: any) => {
-            console.log("Received depth data:", data);
-            setBids((originalBids) => {
-
-                const bidsAfterUpdate = [...(originalBids || [])];
-
-                for (let j = 0; j < data.bids.length; j++) {
-                    const [price, quantity] = data.bids[j];
-                    const index = bidsAfterUpdate.findIndex(bid => bid[0] === price);
-
-                    if (quantity == 0) {
-                        if (index !== -1) {
-                            bidsAfterUpdate.splice(index, 1);
-                        }
-                    } else if (index !== -1) {
-                        bidsAfterUpdate[index][1] = quantity;
-                    } else {
-                        bidsAfterUpdate.push([price, quantity]);
+        // Initial REST Depth Snapshot
+        const fetchInitialDepth = async () => {
+            try {
+                const depth = await getDepth(market);
+                if (depth) {
+                    const validAsks = (depth.asks || []).filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
+                    const validBids = (depth.bids || []).filter((bid: [string, string]) => parseFloat(bid[1]) > 0).reverse();
+                    setAsks(validAsks);
+                    setBids(validBids);
+                    if (validAsks.length > 0) {
+                        setLastPrice(validAsks[0][0]);
                     }
                 }
+            } catch (e) {
+                console.error("Failed to fetch initial depth:", e);
+            }
+        };
 
-                return bidsAfterUpdate.sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
-            });
+        fetchInitialDepth();
 
-            setAsks((originalAsks) => {
+        // Real-Time WebSocket Depth Stream Subscription
+        const unsubscribe = wsManager.subscribeDepth(market, (data: DepthData) => {
+            const validAsks = (data.asks || []).filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
+            const validBids = (data.bids || []).filter((bid: [string, string]) => parseFloat(bid[1]) > 0);
 
-                const asksAfterUpdate = [...(originalAsks || [])];
+            setAsks(validAsks);
+            setBids(validBids);
 
-                for (let j = 0; j < data.asks.length; j++) {
-                    const [price, quantity] = data.asks[j];
-                    const index = asksAfterUpdate.findIndex(ask => ask[0] === price);
-
-                    if (quantity == 0) {
-                        if (index !== -1) {
-                            asksAfterUpdate.splice(index, 1);
-                        }
-                    } else if (index !== -1) {
-                        asksAfterUpdate[index][1] = quantity;
-                    } else {
-                        asksAfterUpdate.push([price, quantity]);
-                    }
-                }
-
-                return asksAfterUpdate.sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]));
-            });
-        }, `DEPTH-${market}`);
-
-        SignalingManager.getInstance().sendMessage({ "method": "SUBSCRIBE", "params": [`depth.200ms.${market}`] });
-
-        getDepthData();
+            if (validAsks.length > 0) {
+                setLastPrice(validAsks[0][0]);
+            } else if (validBids.length > 0) {
+                setLastPrice(validBids[0][0]);
+            }
+        });
 
         return () => {
-            SignalingManager.getInstance().sendMessage({ "method": "UNSUBSCRIBE", "params": [`depth.200ms.${market}`] });
-            SignalingManager.getInstance().deRegisterCallback("depth", `DEPTH-${market}`);
-        }
-
-
+            unsubscribe();
+        };
     }, [market]);
 
     return (

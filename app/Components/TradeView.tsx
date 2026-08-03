@@ -27,22 +27,39 @@ export default function TradeView({
           chartManagerRef.current.destroy();
         }
 
-        // Convert timestamp to seconds (unix epoch)
-        const chartData = (klineData || [])
-          .map((x) => ({
-            close: parseFloat(x.close),
-            high: parseFloat(x.high),
-            low: parseFloat(x.low),
-            open: parseFloat(x.open),
-            // x.end should already be a timestamp in milliseconds
-            // Convert to seconds for lightweight-charts
-            timestamp: Math.floor(new Date(x.end).getTime() / 1000),
-          }))
-          .sort((x, y) => x.timestamp - y.timestamp);
+        // Convert timestamp to valid seconds for lightweight-charts
+        const formattedData = (klineData || [])
+          .map((x: any) => {
+            const rawTime = x.timestamp ?? x.time ?? x.end ?? x.start;
+            let timeInSec: number;
+            if (typeof rawTime === "number") {
+              timeInSec = rawTime > 1e11 ? Math.floor(rawTime / 1000) : rawTime;
+            } else if (typeof rawTime === "string") {
+              const parsed = Number(rawTime);
+              if (!isNaN(parsed) && parsed > 0) {
+                timeInSec = parsed > 1e11 ? Math.floor(parsed / 1000) : parsed;
+              } else {
+                timeInSec = Math.floor(new Date(rawTime).getTime() / 1000);
+              }
+            } else {
+              timeInSec = Math.floor(Date.now() / 1000);
+            }
+
+            return {
+              close: parseFloat(x.close || "0"),
+              high: parseFloat(x.high || "0"),
+              low: parseFloat(x.low || "0"),
+              open: parseFloat(x.open || "0"),
+              timestamp: timeInSec,
+            };
+          })
+          .filter((x) => !isNaN(x.timestamp) && x.timestamp > 0)
+          .sort((x, y) => x.timestamp - y.timestamp)
+          .filter((item, index, self) => index === 0 || item.timestamp > self[index - 1].timestamp);
 
         const chartManager = new ChartManager(
           chartRef.current,
-          chartData,
+          formattedData,
           {
             background: "#181a20",
             color: "#475168",
