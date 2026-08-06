@@ -51,7 +51,8 @@ const Trades = ({ market, hideHeader = false }: { market: string; hideHeader?: b
 
                         let isGreen = index % 2 === 0;
                         if (trade.isBuyerMaker !== undefined) {
-                            isGreen = !trade.isBuyerMaker;
+                            // Maker has LONG order -> Green (#00C076), Maker has SHORT order -> Red (#F6465D)
+                            isGreen = trade.isBuyerMaker;
                         } else if (currPrice !== nextPrice) {
                             isGreen = currPrice > nextPrice;
                         }
