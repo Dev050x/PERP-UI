@@ -79,8 +79,9 @@ const AccountPanel = ({ market }: { market: string }) => {
       // 4. Fetch Fills / Position History
       try {
         const fillsRes = await getFillsApi();
-        const rawFills = fillsRes?.data ?? fillsRes?.fills ?? [];
-        setFills(Array.isArray(rawFills) ? rawFills : []);
+        const rawFills = fillsRes?.data?.fills ?? fillsRes?.data ?? fillsRes?.fills ?? [];
+        const parsedFills = Array.isArray(rawFills) ? rawFills : [];
+        setFills(parsedFills);
       } catch (e) {
         setFills([]);
       }
