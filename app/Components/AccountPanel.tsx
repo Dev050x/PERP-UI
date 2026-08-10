@@ -8,6 +8,7 @@ import {
   getOrdersApi,
   getFillsApi,
   deleteOrderApi,
+  createOrderApi,
 } from "../utils/httpClient";
 import { getToken } from "../utils/auth";
 
@@ -34,6 +35,8 @@ const AccountPanel = ({ market }: { market: string }) => {
   const [ordersHistory, setOrdersHistory] = useState<any[]>([]);
   const [fills, setFills] = useState<any[]>([]);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [closingPosition, setClosingPosition] = useState<boolean>(false);
+  const [noticeMsg, setNoticeMsg] = useState<{ text: string; isError: boolean } | null>(null);
 
   const fetchAllData = async () => {
     const token = getToken();
@@ -102,6 +105,7 @@ const AccountPanel = ({ market }: { market: string }) => {
   const handleCancelOrder = async (orderId: string) => {
     if (!orderId) return;
     setCancellingId(orderId);
+    setNoticeMsg(null);
 
     // Optimistic UI update: immediately remove from open orders UI list
     setOpenOrdersList((prev) => prev.filter((o) => (o.id || o.orderId) !== orderId));
@@ -109,6 +113,7 @@ const AccountPanel = ({ market }: { market: string }) => {
     try {
       const res = await deleteOrderApi(orderId);
       if (res?.success || res?.msg?.includes("Cancelled") || res?.order) {
+        setNoticeMsg({ text: "Order cancelled successfully", isError: false });
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("orderUpdated"));
           window.dispatchEvent(new Event("balanceUpdated"));
@@ -122,6 +127,57 @@ const AccountPanel = ({ market }: { market: string }) => {
       fetchAllData();
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handleClosePosition = async (pos: any) => {
+    if (!pos || closingPosition) return;
+    setClosingPosition(true);
+    setNoticeMsg(null);
+
+    const closeSide = (pos.side || "").toUpperCase() === "LONG" ? "SHORT" : "LONG";
+    const closeQty = pos.qty;
+    const baseMarket = (pos.market || market).split("_")[0];
+    const margin = pos.margin || "0";
+
+    // Optimistic UI update: remove position from UI immediately
+    setPosition(null);
+
+    try {
+      const res = await createOrderApi({
+        market: baseMarket,
+        side: closeSide,
+        type: "market",
+        qty: closeQty,
+        margin: margin,
+      });
+
+      if (res?.success) {
+        setNoticeMsg({ text: "Position closed successfully!", isError: false });
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("orderUpdated"));
+          window.dispatchEvent(new Event("balanceUpdated"));
+        }
+      } else {
+        const rawErr = res?.error || res?.msg || "Failed to close position";
+        let formatted = rawErr;
+        if (typeof rawErr === "string" && (rawErr.includes("No buy order is available") || rawErr.includes("No sell order is available") || rawErr.includes("order is available"))) {
+          formatted = `Orderbook Empty: No matching ${closeSide === "SHORT" ? "sell" : "buy"} order is currently available in the orderbook to close this position.`;
+        }
+        setNoticeMsg({ text: formatted, isError: true });
+        fetchAllData();
+      }
+    } catch (e: any) {
+      const errorData = e.response?.data;
+      const rawErr = errorData?.error || errorData?.msg || e.message || "Failed to close position";
+      let formatted = typeof rawErr === "string" ? rawErr : "Failed to close position";
+      if (typeof rawErr === "string" && (rawErr.includes("No buy order is available") || rawErr.includes("No sell order is available") || rawErr.includes("order is available"))) {
+        formatted = `Orderbook Empty: No matching ${closeSide === "SHORT" ? "sell" : "buy"} order is currently available in the orderbook to close this position.`;
+      }
+      setNoticeMsg({ text: formatted, isError: true });
+      fetchAllData();
+    } finally {
+      setClosingPosition(false);
     }
   };
 
@@ -149,6 +205,23 @@ const AccountPanel = ({ market }: { market: string }) => {
         ))}
       </div>
 
+      {/* Dismissible Notice Banner */}
+      {noticeMsg && (
+        <div className={`mx-4 mt-3 p-3 rounded-lg text-xs font-semibold flex items-center justify-between ${noticeMsg.isError ? "bg-[#3B171E] text-[#F6465D] border border-[#F6465D]/30" : "bg-[#0F3A2C] text-[#00C076] border border-[#00C076]/30"}`}>
+          <div className="flex items-center gap-2">
+            <span>{noticeMsg.isError ? "⚠️" : "✔"}</span>
+            <span>{noticeMsg.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNoticeMsg(null)}
+            className="text-xs font-bold px-1.5 py-0.5 hover:bg-black/20 rounded"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Main Body Content */}
       <div className="flex-1 p-4 overflow-y-auto">
         {/* Balances Tab */}
@@ -172,7 +245,7 @@ const AccountPanel = ({ market }: { market: string }) => {
         {/* Positions Tab */}
         {activeTab === "Positions" && (
           <div className="flex flex-col gap-1">
-            <div className="grid grid-cols-7 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
+            <div className="grid grid-cols-8 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Market</span>
               <span className="text-left">Side</span>
               <span className="text-right">Size</span>
@@ -180,9 +253,10 @@ const AccountPanel = ({ market }: { market: string }) => {
               <span className="text-right">Margin</span>
               <span className="text-right">Liq. Price</span>
               <span className="text-right">PnL</span>
+              <span className="text-right">Action</span>
             </div>
             {position ? (
-              <div className="grid grid-cols-7 items-center text-xs py-2.5 px-2 border-b border-[#23272E]/40 hover:bg-[#2B2F36]/30 transition-colors font-medium">
+              <div className="grid grid-cols-8 items-center text-xs py-2.5 px-2 border-b border-[#23272E]/40 hover:bg-[#2B2F36]/30 transition-colors font-medium">
                 <span className="font-bold text-white text-left">{position.market || market}</span>
                 <span className={`text-left font-bold ${position.side === "LONG" ? "text-[#00C076]" : "text-[#F6465D]"}`}>
                   {position.side}
@@ -194,6 +268,16 @@ const AccountPanel = ({ market }: { market: string }) => {
                 <span className={`text-right tabular-nums font-bold ${parseFloat(position.pnl || "0") >= 0 ? "text-[#00C076]" : "text-[#F6465D]"}`}>
                   ${parseFloat(position.pnl || "0").toFixed(2)}
                 </span>
+                <div className="text-right">
+                  <button
+                    type="button"
+                    disabled={closingPosition}
+                    onClick={() => handleClosePosition(position)}
+                    className="px-2 py-1 text-[11px] font-bold bg-[#3B171E] hover:bg-[#F6465D] text-[#F6465D] hover:text-white rounded transition-colors disabled:opacity-50"
+                  >
+                    {closingPosition ? "Closing..." : "Market Close"}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-xs text-[#848E9C]">
