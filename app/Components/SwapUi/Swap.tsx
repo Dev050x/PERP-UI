@@ -190,9 +190,8 @@ const Swap = ({ market }: { market: string }) => {
 
                 {/* Leverage Selector */}
                 <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center text-xs px-0.5">
+                    <div className="flex justify-between items-center text-sm px-0.5">
                         <span className="text-[#848E9C]">Leverage</span>
-                        <span className="font-bold text-[#2EBD85]">{leverage}x</span>
                     </div>
                     <div className="grid grid-cols-6 gap-1 bg-[#0B0E11] p-1 rounded-lg">
                         {leverageOptions.map((lev) => (
@@ -200,7 +199,7 @@ const Swap = ({ market }: { market: string }) => {
                                 key={lev}
                                 type="button"
                                 onClick={() => setLeverage(lev)}
-                                className={`py-1.5 text-[11px] font-semibold rounded transition-all ${
+                                className={`py-1.5 text-[12px] rounded transition-all ${
                                     leverage === lev
                                         ? "bg-[#2B2F36] text-white"
                                         : "text-[#848E9C] hover:text-white"

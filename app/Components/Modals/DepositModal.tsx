@@ -77,12 +77,12 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
 
         {/* Banners */}
         {errorMsg && (
-          <div className="p-3 bg-[#3B171E] border border-[#F6465D]/30 rounded-xl text-xs text-[#F6465D]">
+          <div className="p-3 bg-[#3B171E] border border-[#F6465D]/30 rounded-xl text-md text-[#F6465D]">
             {errorMsg}
           </div>
         )}
         {successMsg && (
-          <div className="p-3 bg-[#0F3A2C] border border-[#00C076]/30 rounded-xl text-xs text-[#00C076]">
+          <div className="p-3 bg-[#0F3A2C] border border-[#00C076]/30 rounded-xl text-md text-[#00C076]">
             {successMsg}
           </div>
         )}

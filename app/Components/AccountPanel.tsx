@@ -6,6 +6,7 @@ import {
   BalanceData,
   getOpenPositionApi,
   getOrdersApi,
+  getOpenOrdersApi,
   getFillsApi,
   deleteOrderApi,
   createOrderApi,
@@ -60,17 +61,18 @@ const AccountPanel = ({ market }: { market: string }) => {
         setPosition(null);
       }
 
-      // 3. Fetch Open Orders
+      // 3. Fetch Open Orders & Order History
       try {
-        const openOrdersRes = await getOrdersApi(market); // Or open orders
-        const rawOrders = openOrdersRes?.data?.orders ?? openOrdersRes?.orders ?? [];
-        if (Array.isArray(rawOrders)) {
-          setOrdersHistory(rawOrders);
-          setOpenOrdersList(rawOrders.filter((o: any) => o.status === "open" || o.status === "partiallyFilled"));
-        } else {
-          setOrdersHistory([]);
-          setOpenOrdersList([]);
-        }
+        const [openOrdersRes, allOrdersRes] = await Promise.all([
+          getOpenOrdersApi(market),
+          getOrdersApi(market),
+        ]);
+
+        const rawOpen = openOrdersRes?.data?.orders ?? openOrdersRes?.orders ?? [];
+        const rawAll = allOrdersRes?.data?.orders ?? allOrdersRes?.orders ?? [];
+
+        setOpenOrdersList(Array.isArray(rawOpen) ? rawOpen : []);
+        setOrdersHistory(Array.isArray(rawAll) ? rawAll : []);
       } catch (e) {
         setOrdersHistory([]);
         setOpenOrdersList([]);
@@ -208,9 +210,9 @@ const AccountPanel = ({ market }: { market: string }) => {
 
       {/* Dismissible Notice Banner */}
       {noticeMsg && (
-        <div className={`mx-4 mt-3 p-3 rounded-lg text-xs font-semibold flex items-center justify-between ${noticeMsg.isError ? "bg-[#3B171E] text-[#F6465D] border border-[#F6465D]/30" : "bg-[#0F3A2C] text-[#00C076] border border-[#00C076]/30"}`}>
+        <div className={`mx-4 mt-3 p-3 rounded-lg text-xs  flex items-center justify-between ${noticeMsg.isError ? "bg-[#3B171E] text-[#F6465D] border border-[#F6465D]/30" : "bg-[#0F3A2C] text-[#00C076] border border-[#00C076]/30"}`}>
           <div className="flex items-center gap-2">
-            <span>{noticeMsg.isError ? "⚠️" : "✔"}</span>
+            <span>{noticeMsg.isError ? "Error" : "✔"}</span>
             <span>{noticeMsg.text}</span>
           </div>
           <button
