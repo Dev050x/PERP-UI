@@ -127,7 +127,7 @@ const MarketBar = ({ market }: { market: string }) => {
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="flex mr-1">
-                                        <a href={`/trade/${symbol}`}>
+                                        <a href={`/trade/${baseAsset}`}>
                                             <div className="flex items-center min-w-max gap-2">
                                                 <div className="relative shrink-0 w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-[#202127]">
                                                      <img

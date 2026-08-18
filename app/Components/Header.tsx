@@ -84,7 +84,7 @@ const Header = () => {
                         <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 hover:opacity-90 shrink-0 text-white">
                             Exchange
                         </Link>
-                        <Link href="/trade/SOL_USDC" className="flex items-center justify-center h-8 text-sm font-semibold mx-4 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
+                        <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold mx-4 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
                             Trade
                         </Link>
                     </div>
