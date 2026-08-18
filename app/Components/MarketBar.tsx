@@ -14,8 +14,8 @@ interface MarketStats {
 
 const MarketBar = ({ market }: { market: string }) => {
     const symbol = market ? market.toUpperCase() : "SOL_USDC";
-    const baseAsset = symbol.split("_")[0];
-    const coinLogo = baseAsset === "ETH" ? "/coins/eth.png" : "/coins/sol.png";
+    const baseAsset = symbol.split(/[_:-]/)[0] || "SOL";
+    const coinLogo = baseAsset.includes("ETH") ? "/coins/eth.png" : "/coins/sol.png";
 
     const [stats, setStats] = useState<MarketStats>({
         currentPrice: "--",
@@ -129,18 +129,16 @@ const MarketBar = ({ market }: { market: string }) => {
                                     <div className="flex mr-1">
                                         <a href={`/trade/${symbol}`}>
                                             <div className="flex items-center min-w-max gap-2">
-                                                <div className="relative shrink-0">
-                                                    <img
-                                                        src={coinLogo}
-                                                        alt={`${symbol} Logo`}
-                                                        width={24}
-                                                        height={24}
-                                                        className="rounded-full"
-                                                        onError={(e) => {
-                                                            (e.target as HTMLElement).style.display = 'none';
-                                                        }}
-                                                    />
-                                                </div>
+                                                <div className="relative shrink-0 w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-[#202127]">
+                                                     <img
+                                                         key={coinLogo}
+                                                         src={coinLogo}
+                                                         alt={`${symbol} Logo`}
+                                                         width={24}
+                                                         height={24}
+                                                         className="w-full h-full object-cover rounded-full"
+                                                     />
+                                                 </div>
                                                 <p className="font-bold text-nowrap text-[#EAECEF]">
                                                    {symbol}
                                                 </p>
