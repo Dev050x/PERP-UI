@@ -38,7 +38,7 @@ const SigninPage = () => {
       const res = await signInApi(email, password);
       if (res?.token) {
         setAuthData(res.token, res.userId);
-        router.push("/trade/SOL_USDC");
+        router.push("/trade/SOL");
       } else {
         setErrorMsg(res?.msg || "Login failed.");
       }

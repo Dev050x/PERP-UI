@@ -21,8 +21,8 @@ interface MarketPairData {
 export default function Home() {
   const [pairs, setPairs] = useState<MarketPairData[]>([
     {
-      symbol: "SOL_USDC",
-      name: "SOL / USDC",
+      symbol: "SOL",
+      name: "SOL-PERP",
       baseAsset: "SOL",
       logo: "/coins/sol.png",
       price: "--",
@@ -34,8 +34,8 @@ export default function Home() {
       tradeUrl: "/trade/SOL",
     },
     {
-      symbol: "ETH_USDC",
-      name: "ETH / USDC",
+      symbol: "ETH",
+      name: "ETH-PERP",
       baseAsset: "ETH",
       logo: "/coins/eth.png",
       price: "--",
@@ -122,15 +122,15 @@ export default function Home() {
   };
 
   const updateAllStats = async () => {
-    const solStats = await fetchPairStats("SOL_USDC");
-    const ethStats = await fetchPairStats("ETH_USDC");
+    const solStats = await fetchPairStats("SOL");
+    const ethStats = await fetchPairStats("ETH");
 
     setPairs((prev) =>
       prev.map((pair) => {
-        if (pair.symbol === "SOL_USDC" && solStats) {
+        if (pair.symbol === "SOL" && solStats) {
           return { ...pair, ...solStats };
         }
-        if (pair.symbol === "ETH_USDC" && ethStats) {
+        if (pair.symbol === "ETH" && ethStats) {
           return { ...pair, ...ethStats };
         }
         return pair;

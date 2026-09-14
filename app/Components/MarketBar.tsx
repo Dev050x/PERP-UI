@@ -13,9 +13,11 @@ interface MarketStats {
 }
 
 const MarketBar = ({ market }: { market: string }) => {
-    const symbol = market ? market.toUpperCase() : "SOL_USDC";
-    const baseAsset = symbol.split(/[_:-]/)[0] || "SOL";
+    const rawSymbol = market ? market.toUpperCase() : "SOL";
+    const baseAsset = rawSymbol.split(/[_:-]/)[0] || "SOL";
+    const displayMarket = `${baseAsset}-PERP`;
     const coinLogo = baseAsset.includes("ETH") ? "/coins/eth.png" : "/coins/sol.png";
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const [stats, setStats] = useState<MarketStats>({
         currentPrice: "--",
@@ -30,9 +32,9 @@ const MarketBar = ({ market }: { market: string }) => {
     const fetchMarketStats = async () => {
         try {
             const [tradesData, candlesData, depthData] = await Promise.all([
-                getTrades(market, "100").catch(() => []),
-                getKlines(market, "1d", undefined, 50).catch(() => []),
-                getDepth(market).catch(() => null),
+                getTrades(baseAsset, "100").catch(() => []),
+                getKlines(baseAsset, "1d", undefined, 50).catch(() => []),
+                getDepth(baseAsset).catch(() => null),
             ]);
 
             const trades = Array.isArray(tradesData) ? tradesData : [];
@@ -120,33 +122,57 @@ const MarketBar = ({ market }: { market: string }) => {
             <div className="flex items-center flex-row no-scrollbar mr-4 ml-4 h-[65px] w-full overflow-auto">
                 <div className="flex justify-between flex-row w-full gap-4">
                     <div className="flex flex-row shrink-0 gap-6">
-                        <div className="flex flex-row gap-2">
+                        <div className="flex flex-row gap-2 relative">
                             <button
                                 type="button"
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="rounded-xl pl-2 hover:opacity-80 transition-opacity"
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="flex mr-1">
-                                        <a href={`/trade/${baseAsset}`}>
-                                            <div className="flex items-center min-w-max gap-2">
-                                                <div className="relative shrink-0 w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-[#202127]">
-                                                     <img
-                                                         key={coinLogo}
-                                                         src={coinLogo}
-                                                         alt={`${symbol} Logo`}
-                                                         width={24}
-                                                         height={24}
-                                                         className="w-full h-full object-cover rounded-full"
-                                                     />
-                                                 </div>
-                                                <p className="font-bold text-nowrap text-[#EAECEF]">
-                                                   {symbol}
-                                                </p>
-                                            </div>
-                                        </a>
+                                        <div className="flex items-center min-w-max gap-2">
+                                            <div className="relative shrink-0 w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-[#202127]">
+                                                 <img
+                                                     key={coinLogo}
+                                                     src={coinLogo}
+                                                     alt={`${displayMarket} Logo`}
+                                                     width={24}
+                                                     height={24}
+                                                     className="w-full h-full object-cover rounded-full"
+                                                 />
+                                             </div>
+                                            <p className="font-bold text-nowrap text-[#EAECEF] flex items-center gap-1.5">
+                                               {displayMarket}
+                                               <span className="text-[10px] text-[#848E9C]">▼</span>
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </button>
+
+                            {/* Market Selector Dropdown */}
+                            {isDropdownOpen && (
+                                <div className="absolute top-full left-0 mt-2 w-44 bg-[#181a20] border border-[#2B2F36] rounded-xl shadow-2xl z-50 flex flex-col p-1.5">
+                                    <a
+                                        href="/trade/SOL"
+                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+                                            baseAsset === "SOL" ? "bg-[#2B2F36] text-[#00C076]" : "text-[#EAECEF] hover:bg-[#2B2F36]/50"
+                                        }`}
+                                    >
+                                        <img src="/coins/sol.png" alt="SOL" className="w-5 h-5 rounded-full" />
+                                        <span>SOL-PERP</span>
+                                    </a>
+                                    <a
+                                        href="/trade/ETH"
+                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+                                            baseAsset === "ETH" ? "bg-[#2B2F36] text-[#00C076]" : "text-[#EAECEF] hover:bg-[#2B2F36]/50"
+                                        }`}
+                                    >
+                                        <img src="/coins/eth.png" alt="ETH" className="w-5 h-5 rounded-full" />
+                                        <span>ETH-PERP</span>
+                                    </a>
+                                </div>
+                            )}
                         </div>
                         <div className="flex items-center flex-row flex-wrap gap-x-8">
                             {/* Current Price */}
