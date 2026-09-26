@@ -1,4 +1,4 @@
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3001";
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL!;
 
 export type DepthData = {
   bids: [string, string][];

@@ -1,9 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
 import {
-  getBalanceApi,
-  extractBalance,
-  BalanceData,
   getOpenPositionApi,
   getOrdersApi,
   getOpenOrdersApi,
@@ -12,6 +9,7 @@ import {
   createOrderApi,
 } from "../utils/httpClient";
 import { getToken } from "../utils/auth";
+import { useBalanceContext } from "../context/BalanceContext";
 
 type TabType =
   | "Balances"
@@ -29,26 +27,22 @@ const tabs: TabType[] = [
 ];
 
 const AccountPanel = ({ market }: { market: string }) => {
+  const { balance, totalNum, openDepositModal } = useBalanceContext();
   const [activeTab, setActiveTab] = useState<TabType>("Balances");
-  const [balanceData, setBalanceData] = useState<BalanceData | null>(null);
   const [position, setPosition] = useState<any | null>(null);
   const [openOrdersList, setOpenOrdersList] = useState<any[]>([]);
   const [ordersHistory, setOrdersHistory] = useState<any[]>([]);
   const [fills, setFills] = useState<any[]>([]);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [closingPosition, setClosingPosition] = useState<boolean>(false);
-  const [noticeMsg, setNoticeMsg] = useState<{ text: string; isError: boolean } | null>(null);
+  const [noticeMsg, setNoticeMsg] = useState<{ text: string; isError: boolean; isDepositPrompt?: boolean } | null>(null);
 
   const fetchAllData = async () => {
     const token = getToken();
     if (!token) return;
 
     try {
-      // 1. Fetch Balances
-      const balanceRes = await getBalanceApi();
-      setBalanceData(extractBalance(balanceRes));
-
-      // 2. Fetch Open Position
+      // 1. Fetch Open Position
       try {
         const posRes = await getOpenPositionApi(market);
         const rawPos = posRes?.data?.position ?? posRes?.position ?? posRes?.data;
@@ -184,9 +178,9 @@ const AccountPanel = ({ market }: { market: string }) => {
     }
   };
 
-  const formattedAvail = balanceData?.availableBalance ? parseFloat(balanceData.availableBalance).toFixed(2) : "0.00";
-  const formattedLocked = balanceData?.lockedBalance ? parseFloat(balanceData.lockedBalance).toFixed(2) : "0.00";
-  const totalBalance = (parseFloat(formattedAvail) + parseFloat(formattedLocked)).toFixed(2);
+  const formattedAvail = balance.availableBalance;
+  const formattedLocked = balance.lockedBalance;
+  const totalBalance = totalNum.toFixed(2);
 
   return (
     <div className="flex flex-col h-full bg-[#181a20] rounded-[8px] overflow-hidden text-[#EAECEF]">

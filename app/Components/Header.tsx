@@ -1,9 +1,8 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { getBalanceApi, extractBalance } from "../utils/httpClient";
+import { useBalanceContext } from "../context/BalanceContext";
 import { getToken, removeAuthData } from "../utils/auth";
-import DepositModal from "./Modals/DepositModal";
 import WithdrawModal from "./Modals/WithdrawModal";
 
 const UserIcon = () => (
@@ -14,42 +13,15 @@ const UserIcon = () => (
 );
 
 const Header = () => {
+    const { balance, totalNum, openDepositModal } = useBalanceContext();
     const [loggedIn, setLoggedIn] = useState(false);
-    const [balances, setBalances] = useState({ availableBalance: "0.00", lockedBalance: "0.00" });
-    const [isDepositOpen, setIsDepositOpen] = useState(false);
     const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const fetchBalance = async () => {
-        const token = getToken();
-        if (!token) {
-            setLoggedIn(false);
-            setBalances({ availableBalance: "0.00", lockedBalance: "0.00" });
-            return;
-        }
-        setLoggedIn(true);
-        try {
-            const res = await getBalanceApi();
-            const extracted = extractBalance(res);
-            setBalances({
-                availableBalance: parseFloat(extracted.availableBalance).toFixed(2),
-                lockedBalance: parseFloat(extracted.lockedBalance).toFixed(2),
-            });
-        } catch (err) {
-            console.error("Failed to fetch balance:", err);
-        }
-    };
-
     useEffect(() => {
-        fetchBalance();
-        const handleBalanceUpdate = () => {
-            fetchBalance();
-        };
-        window.addEventListener("balanceUpdated", handleBalanceUpdate);
-        return () => {
-            window.removeEventListener("balanceUpdated", handleBalanceUpdate);
-        };
+        const token = getToken();
+        setLoggedIn(!!token);
     }, []);
 
     // Close profile dropdown on outside click
@@ -66,14 +38,9 @@ const Header = () => {
     const handleLogout = () => {
         removeAuthData();
         setLoggedIn(false);
-        setBalances({ availableBalance: "0.00", lockedBalance: "0.00" });
         setIsProfileOpen(false);
         window.location.reload();
     };
-
-    const availNum = parseFloat(balances.availableBalance);
-    const lockedNum = parseFloat(balances.lockedBalance);
-    const totalBalance = (availNum + lockedNum).toFixed(2);
 
     return (
         <div className="relative">
@@ -96,7 +63,7 @@ const Header = () => {
                                 {/* Deposit Button */}
                                 <button
                                     type="button"
-                                    onClick={() => setIsDepositOpen(true)}
+                                    onClick={openDepositModal}
                                     className="rounded-lg bg-[#202127] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                                 >
                                     Deposit
@@ -143,15 +110,15 @@ const Header = () => {
                                             <div className="flex flex-col gap-2 bg-[#1E2026] p-3 rounded-xl border border-[#2B2F36]">
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-[#848E9C]">Total Balance</span>
-                                                    <span className="font-bold text-white tabular-nums">${totalBalance} USDC</span>
+                                                    <span className="font-bold text-white tabular-nums">${totalNum.toFixed(2)} USDC</span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-[#848E9C]">Available Balance</span>
-                                                    <span className="font-semibold text-[#00C076] tabular-nums">${balances.availableBalance} USDC</span>
+                                                    <span className="font-semibold text-[#00C076] tabular-nums">${balance.availableBalance} USDC</span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-[#848E9C]">Locked Balance</span>
-                                                    <span className="font-medium text-[#EAECEF] tabular-nums">${balances.lockedBalance} USDC</span>
+                                                    <span className="font-medium text-[#EAECEF] tabular-nums">${balance.lockedBalance} USDC</span>
                                                 </div>
                                             </div>
 
@@ -161,7 +128,7 @@ const Header = () => {
                                                     type="button"
                                                     onClick={() => {
                                                         setIsProfileOpen(false);
-                                                        setIsDepositOpen(true);
+                                                        openDepositModal();
                                                     }}
                                                     className="w-full text-left px-3 py-2 text-xs font-semibold text-white hover:bg-[#2B2F36] rounded-lg transition-colors flex items-center justify-between"
                                                 >
@@ -213,16 +180,10 @@ const Header = () => {
             </div>
 
             {/* Modals */}
-            <DepositModal
-                isOpen={isDepositOpen}
-                onClose={() => setIsDepositOpen(false)}
-                onSuccess={fetchBalance}
-            />
             <WithdrawModal
                 isOpen={isWithdrawOpen}
                 onClose={() => setIsWithdrawOpen(false)}
-                availableBalance={balances.availableBalance}
-                onSuccess={fetchBalance}
+                availableBalance={balance.availableBalance}
             />
         </div>
     );

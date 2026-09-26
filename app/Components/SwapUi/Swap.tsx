@@ -1,11 +1,14 @@
 "use client"
-import { getDepth, getBalanceApi, extractBalance, createOrderApi } from "@/app/utils/httpClient";
+import { getDepth, createOrderApi } from "@/app/utils/httpClient";
 import { getToken } from "@/app/utils/auth";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useBalanceContext } from "@/app/context/BalanceContext";
 
 const Swap = ({ market }: { market: string }) => {
     const router = useRouter();
+    const { balance, openDepositModal } = useBalanceContext();
+    const availableEquity = balance.availableBalance;
     const [side, setSide] = useState<'buy' | 'sell'>('buy');
     const [marketStatus, setMarketStatus] = useState<'limit' | 'market'>('limit');
     const [lastPrice, setLastPrice] = useState<string | null>(null);
@@ -13,31 +16,8 @@ const Swap = ({ market }: { market: string }) => {
     const [quantity, setQuantity] = useState<string>('');
     const [sliderVal, setSliderVal] = useState<number>(0);
     const [leverage, setLeverage] = useState<number>(10);
-    const [availableEquity, setAvailableEquity] = useState<string>("0.00");
     const [loading, setLoading] = useState(false);
-    const [statusMsg, setStatusMsg] = useState<{ text: string; isError: boolean } | null>(null);
-
-    const fetchEquity = async () => {
-        const token = getToken();
-        if (!token) {
-            setAvailableEquity("0.00");
-            return;
-        }
-        try {
-            const res = await getBalanceApi();
-            const extracted = extractBalance(res);
-            setAvailableEquity(parseFloat(extracted.availableBalance).toFixed(2));
-        } catch (e) {
-            console.error("Failed to fetch available equity in Swap:", e);
-        }
-    };
-
-    useEffect(() => {
-        fetchEquity();
-        const handleBalanceUpdate = () => fetchEquity();
-        window.addEventListener("balanceUpdated", handleBalanceUpdate);
-        return () => window.removeEventListener("balanceUpdated", handleBalanceUpdate);
-    }, []);
+    const [statusMsg, setStatusMsg] = useState<{ text: string; isError: boolean; isDepositPrompt?: boolean } | null>(null);
 
     useEffect(() => {
         const getDepthData = async () => {
@@ -102,6 +82,16 @@ const Swap = ({ market }: { market: string }) => {
         const baseMarket = market ? market.split("_")[0] : "SOL";
         setLoading(true);
 
+        const checkIsDepositError = (rawErr: string) => {
+            const lower = rawErr.toLowerCase();
+            return (
+                lower.includes("user does not deposit") ||
+                lower.includes("deposit any asset") ||
+                lower.includes("not have enough balance") ||
+                lower.includes("insufficient balance")
+            );
+        };
+
         try {
             const res = await createOrderApi({
                 market: baseMarket,
@@ -120,15 +110,23 @@ const Swap = ({ market }: { market: string }) => {
                     window.dispatchEvent(new Event("balanceUpdated"));
                 }
             } else {
-                setStatusMsg({ text: res?.error || res?.msg || "Failed to place order", isError: true });
+                const rawErr = res?.error || res?.msg || "Failed to place order";
+                if (typeof rawErr === "string" && checkIsDepositError(rawErr)) {
+                    setStatusMsg({ text: "Deposit USDC to start trading.", isError: false, isDepositPrompt: true });
+                    openDepositModal();
+                } else {
+                    setStatusMsg({ text: rawErr, isError: true });
+                }
             }
         } catch (err: any) {
             const errorData = err.response?.data;
-            const rawErr = errorData?.error || errorData?.msg || "Order placement failed";
-            const formatted = typeof rawErr === "string" && (rawErr.includes("user does not deposit") || rawErr.includes("deposit any asset"))
-                ? "Insufficient Balance: Please deposit USDC first"
-                : rawErr;
-            setStatusMsg({ text: formatted, isError: true });
+            const rawErr = errorData?.error || errorData?.msg || err.message || "Order placement failed";
+            if (typeof rawErr === "string" && checkIsDepositError(rawErr)) {
+                setStatusMsg({ text: "Deposit USDC to start trading.", isError: false, isDepositPrompt: true });
+                openDepositModal();
+            } else {
+                setStatusMsg({ text: rawErr, isError: true });
+            }
         } finally {
             setLoading(false);
         }
@@ -165,8 +163,23 @@ const Swap = ({ market }: { market: string }) => {
 
                 {/* Status Message Banner */}
                 {statusMsg && (
-                    <div className={`p-2.5 rounded-lg text-xs font-semibold ${statusMsg.isError ? "bg-[#3B171E] text-[#F6465D] border border-[#F6465D]/30" : "bg-[#0F3A2C] text-[#00C076] border border-[#00C076]/30"}`}>
-                        {statusMsg.text}
+                    <div className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 ${
+                        statusMsg.isError 
+                            ? "bg-[#3B171E] text-[#F6465D] border border-[#F6465D]/30" 
+                            : statusMsg.isDepositPrompt
+                                ? "bg-[#1E2026] text-[#EAECEF] border border-[#00C076]/40"
+                                : "bg-[#0F3A2C] text-[#00C076] border border-[#00C076]/30"
+                    }`}>
+                        <span>{statusMsg.text}</span>
+                        {statusMsg.isDepositPrompt && (
+                            <button
+                                type="button"
+                                onClick={openDepositModal}
+                                className="px-3 py-1 text-xs font-bold text-black bg-[#00C076] hover:bg-[#00C076]/90 rounded-lg shrink-0 transition-colors"
+                            >
+                                Deposit Funds
+                            </button>
+                        )}
                     </div>
                 )}
 

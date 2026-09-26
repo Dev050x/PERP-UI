@@ -1,4 +1,4 @@
-const BASE_URL = process.env.BASE_URL  || "wss://ws.backpack.exchange/";
+const BASE_URL = process.env.BASE_URL!;
 
 interface CallbackObject{
     callback: (data: any) => void;
