@@ -64,7 +64,7 @@ const Header = () => {
                             <Image src="/logo.png" alt="" width={22} height={22} priority />
                             PERP
                         </Link>
-                        <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 sm:ml-6 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
+                        <Link href="/#markets" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 sm:ml-6 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
                             Markets
                         </Link>
                         <Link href="/trade/SOL" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
