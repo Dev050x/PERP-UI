@@ -13,6 +13,9 @@ export default function TradeView({
   const chartManagerRef = useRef<ChartManager>(null);
 
   useEffect(() => {
+    // Set on cleanup so a slow candle response for a previous market doesn't mount a second chart
+    let cancelled = false;
+
     const init = async () => {
       let klineData: Kline[] = [];
       try {
@@ -20,12 +23,13 @@ export default function TradeView({
           (new Date().getTime() - 1000 * 60 * 60 * 24 * 7) / 1000
         );
         klineData = await getKlines(market, "1h", startTime.toString());
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to fetch candles:", e);
+      }
+
+      if (cancelled) return;
 
       if (chartRef.current) {
-        if (chartManagerRef.current) {
-          chartManagerRef.current.destroy();
-        }
 
         // Convert timestamp to valid seconds for lightweight-charts
         const formattedData = (klineData || [])
@@ -69,7 +73,13 @@ export default function TradeView({
       }
     };
     init();
-  }, [market, chartRef]);
+
+    return () => {
+      cancelled = true;
+      chartManagerRef.current?.destroy();
+      chartManagerRef.current = null;
+    };
+  }, [market]);
 
   return (
     <>
