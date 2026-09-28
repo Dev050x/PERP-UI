@@ -85,7 +85,12 @@ const MarketBar = ({ market }: { market: string }) => {
                         <MarketDropdown baseAsset={baseAsset} onSelect={() => setIsDropdownOpen(false)} />
                     )}
                 </div>
-                <div className={`text-xl font-bold tabular-nums ${changeColor}`}>${stats.currentPrice}</div>
+                <div className="text-right">
+                    <div className={`text-xl font-bold leading-tight tabular-nums ${changeColor}`}>${stats.currentPrice}</div>
+                    <div className={`text-xs font-semibold tabular-nums ${changeColor}`}>
+                        {stats.priceChange24h} ({stats.priceChangePercent})
+                    </div>
+                </div>
             </div>
         </div>
 
