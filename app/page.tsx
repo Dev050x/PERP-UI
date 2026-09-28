@@ -80,7 +80,7 @@ export default function Home() {
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col gap-6">
         <section className="flex flex-col items-center text-center gap-5 py-4 sm:py-8">
-          <h1 className="max-w-2xl text-3xl sm:text-5xl font-semibold tracking-tight text-white">
+          <h1 className="max-w-2xl text-3xl sm:text-5xl font-bold tracking-tight text-white">
             Trade Perpetual Futures with Sub-Millisecond Speed
           </h1>
           <p className="max-w-xl text-sm sm:text-base text-[#848E9C]">
