@@ -154,7 +154,7 @@ const Swap = ({ market }: { market: string }) => {
                     type="button"
                     onClick={() => setSide('buy')}
                     className={`h-9 rounded-md text-sm font-semibold transition-colors ${
-                        isBuy ? "bg-[#00C076] text-[#0B0E11]" : "text-[#B7BDC6] hover:text-white"
+                        isBuy ? "bg-[#122322] text-[#00C076]" : "text-[#B7BDC6] hover:text-white"
                     }`}
                 >
                     Buy / Long
@@ -163,7 +163,7 @@ const Swap = ({ market }: { market: string }) => {
                     type="button"
                     onClick={() => setSide('sell')}
                     className={`h-9 rounded-md text-sm font-semibold transition-colors ${
-                        !isBuy ? "bg-[#F6465D] text-white" : "text-[#B7BDC6] hover:text-white"
+                        !isBuy ? "bg-[#38161F] text-[#F6465D]" : "text-[#B7BDC6] hover:text-white"
                     }`}
                 >
                     Sell / Short
@@ -265,32 +265,11 @@ const Swap = ({ market }: { market: string }) => {
             </FieldBox>
 
             {/* Size by % of available margin */}
-            <div className="mt-3">
-                <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={sliderVal}
-                    onChange={(e) => handleSliderChange(Number(e.target.value))}
-                    className={`h-1 w-full cursor-pointer appearance-none rounded-full bg-[#2B2F36] ${isBuy ? "accent-[#00C076]" : "accent-[#F6465D]"}`}
-                    aria-label="Size as percentage of available balance"
-                />
-                <div className="mt-2 grid grid-cols-4 gap-1">
-                    {[25, 50, 75, 100].map((pct) => (
-                        <button
-                            key={pct}
-                            type="button"
-                            onClick={() => handleSliderChange(pct)}
-                            className={`h-6 rounded text-[11px] font-medium tabular-nums transition-colors ${
-                                sliderVal === pct ? "bg-[#2B2F36] text-white" : "text-[#848E9C] hover:text-white"
-                            }`}
-                        >
-                            {pct}%
-                        </button>
-                    ))}
-                </div>
-            </div>
+            <PercentSlider
+                value={sliderVal}
+                onChange={handleSliderChange}
+                color={isBuy ? "#2EBD85" : "#F6465D"}
+            />
 
             {/* Summary */}
             <dl className="mt-4 space-y-2 border-t border-[#2B2F36] pt-4 text-xs">
@@ -331,8 +310,8 @@ const Swap = ({ market }: { market: string }) => {
                     onClick={handlePlaceOrder}
                     className={`h-11 w-full rounded-md text-sm font-bold transition-colors disabled:opacity-60 ${
                         isBuy
-                            ? "bg-[#00C076] text-[#0B0E11] hover:bg-[#00A865]"
-                            : "bg-[#F6465D] text-white hover:bg-[#E03E54]"
+                            ? "bg-[#2EBD85] text-black hover:bg-[#28a774]"
+                            : "bg-[#F6465D] text-white hover:bg-[#e03e54]"
                     }`}
                 >
                     {loading ? "Submitting…" : `${isBuy ? "Buy / Long" : "Sell / Short"} ${baseAsset}`}
@@ -341,6 +320,72 @@ const Swap = ({ market }: { market: string }) => {
         </div>
     );
 };
+
+const SLIDER_STOPS = [0, 25, 50, 75, 100];
+
+// Native range input (for drag/keyboard/a11y) layered invisibly over a custom track
+const PercentSlider = ({
+    value,
+    onChange,
+    color,
+}: {
+    value: number;
+    onChange: (v: number) => void;
+    color: string;
+}) => (
+    <div className="mt-4">
+        <div className="mb-2 flex items-center justify-between text-xs">
+            <span className="text-[#B7BDC6]">Size by balance</span>
+            <span className="font-semibold text-white tabular-nums">{value}%</span>
+        </div>
+        <div className="relative h-5">
+            {/* Track */}
+            <div className="absolute inset-x-2 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#2B2F36]">
+                <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: color }} />
+            </div>
+            {/* Stops */}
+            {SLIDER_STOPS.map((stop) => (
+                <span
+                    key={stop}
+                    className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] border-2"
+                    style={{
+                        left: `calc(0.5rem + (100% - 1rem) * ${stop / 100})`,
+                        borderColor: value >= stop ? color : "#2B2F36",
+                        backgroundColor: value >= stop ? color : "#181a20",
+                    }}
+                />
+            ))}
+            {/* Handle */}
+            <span
+                className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-[#181a20] shadow"
+                style={{ left: `calc(0.5rem + (100% - 1rem) * ${value / 100})`, borderColor: color }}
+            />
+            <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={value}
+                onChange={(e) => onChange(Number(e.target.value))}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label="Size as percentage of available balance"
+            />
+        </div>
+        <div className="relative mt-1 h-4 text-[10px] text-[#848E9C]">
+            {SLIDER_STOPS.map((stop) => (
+                <button
+                    key={stop}
+                    type="button"
+                    onClick={() => onChange(stop)}
+                    className={`absolute -translate-x-1/2 tabular-nums hover:text-white ${value === stop ? "text-white" : ""}`}
+                    style={{ left: `calc(0.5rem + (100% - 1rem) * ${stop / 100})` }}
+                >
+                    {stop}%
+                </button>
+            ))}
+        </div>
+    </div>
+);
 
 // Input row with the label on the left and unit on the right
 const FieldBox = ({
