@@ -83,18 +83,18 @@ export default function Home() {
           <h1 className="max-w-2xl text-3xl sm:text-5xl font-bold tracking-tight text-white">
             Trade Perpetual Futures with Sub-Millisecond Speed
           </h1>
-          <p className="max-w-xl text-sm sm:text-base text-[#848E9C]">
+          <p className="max-w-xl text-sm sm:text-base text-[#B7BDC6]">
             Experience ultra-fast order matching, in-memory execution, deep liquidity, and up to 50x leverage.
           </p>
           <dl className="flex justify-center gap-10 text-sm">
             <div>
-              <dt className="text-xs text-[#848E9C]">24h volume</dt>
+              <dt className="text-xs text-[#B7BDC6]">24h volume</dt>
               <dd className="mt-0.5 font-medium text-white tabular-nums">
                 {loaded ? `$${formatPrice(totalVolume)}` : "—"}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-[#848E9C]">Markets</dt>
+              <dt className="text-xs text-[#B7BDC6]">Markets</dt>
               <dd className="mt-0.5 font-medium text-white tabular-nums">{MARKETS.length}</dd>
             </div>
           </dl>
@@ -104,7 +104,7 @@ export default function Home() {
           {/* Desktop / tablet table */}
           <table className="hidden md:table w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2B2F36] text-xs text-[#848E9C]">
+              <tr className="border-b border-[#2B2F36] text-xs text-[#B7BDC6]">
                 <th className="py-3 pl-5 pr-3 text-left font-medium">Market</th>
                 <th className="py-3 px-3 text-right font-medium">Price</th>
                 <th className="py-3 px-3 text-right font-medium">24h change</th>
@@ -132,10 +132,10 @@ export default function Home() {
                     <td className="py-4 px-3 text-right">
                       {s ? <ChangePill s={s} /> : <Placeholder />}
                     </td>
-                    <td className="hidden lg:table-cell py-4 px-3 text-right tabular-nums text-[#B7BDC6]">
+                    <td className="hidden lg:table-cell py-4 px-3 text-right tabular-nums text-white">
                       {s ? `${formatPrice(s.high)} / ${formatPrice(s.low)}` : <Placeholder />}
                     </td>
-                    <td className="py-4 px-3 text-right tabular-nums text-[#B7BDC6]">
+                    <td className="py-4 px-3 text-right tabular-nums text-white">
                       {s ? `$${formatPrice(s.volumeUsd)}` : <Placeholder />}
                     </td>
                     <td className="py-4 pl-3 pr-5 text-right">
@@ -155,9 +155,10 @@ export default function Home() {
 
           {/* Mobile list */}
           <ul className="md:hidden divide-y divide-[#2B2F36]/60">
-            <li className="flex items-center justify-between px-4 py-2.5 text-xs text-[#848E9C]">
-              <span>Market / 24h vol</span>
-              <span>Price / 24h chg</span>
+            <li className="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-[#B7BDC6]">
+              <span className="flex-1">Market</span>
+              <span className="w-24 text-right">Price</span>
+              <span className="w-[76px] text-right">24h change</span>
             </li>
             {MARKETS.map((m) => {
               const s = stats[m.symbol];
@@ -170,7 +171,7 @@ export default function Home() {
                     <div className="min-w-0 flex-1">
                       <MarketLabel market={m} subtitle={s ? `$${formatCompact(s.volumeUsd)} vol` : undefined} />
                     </div>
-                    <div className={`text-right text-sm font-semibold tabular-nums ${s ? priceColor(s) : ""}`}>
+                    <div className={`w-24 text-right text-sm font-semibold tabular-nums ${s ? priceColor(s) : ""}`}>
                       {s ? `$${formatPrice(s.lastPrice)}` : <Placeholder />}
                     </div>
                     {s ? <ChangePill s={s} solid /> : <Placeholder />}
@@ -183,7 +184,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-[#2B2F36] py-5">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-xs text-[#5E6673]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-xs text-[#848E9C]">
           Prices update every 5 seconds.
         </div>
       </footer>

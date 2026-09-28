@@ -72,8 +72,8 @@ export const AmountField = ({
 }) => (
   <div>
     <div className="mb-1.5 flex items-center justify-between text-xs">
-      <label htmlFor="amount" className="text-[#848E9C]">{label}</label>
-      {hint && <span className="text-[#848E9C] tabular-nums">{hint}</span>}
+      <label htmlFor="amount" className="text-[#B7BDC6]">{label}</label>
+      {hint && <span className="text-[#B7BDC6] tabular-nums">{hint}</span>}
     </div>
     <div
       className={`flex h-12 items-center gap-2 rounded-md border bg-[#0B0E11] px-3 transition-colors focus-within:border-[#5E6673] ${
@@ -89,10 +89,10 @@ export const AmountField = ({
         placeholder="0.00"
         value={value}
         onChange={(e) => AMOUNT_INPUT.test(e.target.value) && onChange(e.target.value)}
-        className="min-w-0 flex-1 bg-transparent text-lg font-medium text-white tabular-nums placeholder:text-[#5E6673] focus:outline-none"
+        className="min-w-0 flex-1 bg-transparent text-lg font-medium text-white tabular-nums placeholder:text-[#848E9C] focus:outline-none"
       />
       {action}
-      <span className="text-sm text-[#848E9C]">USDC</span>
+      <span className="text-sm text-[#B7BDC6]">USDC</span>
     </div>
   </div>
 );
@@ -112,7 +112,7 @@ export const Chip = ({
     className={`h-8 rounded-md border text-xs font-medium tabular-nums transition-colors ${
       active
         ? "border-[#5E6673] bg-[#2B2F36] text-white"
-        : "border-[#2B2F36] text-[#B7BDC6] hover:border-[#5E6673] hover:text-white"
+        : "border-[#2B2F36] text-white hover:border-[#5E6673] hover:bg-[#2B2F36]"
     }`}
   >
     {children}

@@ -110,20 +110,20 @@ const Header = () => {
                                     {isProfileOpen && (
                                         <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-[#2B2F36] bg-[#181a20] shadow-xl z-50">
                                             <div className="px-4 pt-3 pb-4">
-                                                <div className="text-xs text-[#848E9C]">
-                                                    Account{shortUserId && <span className="text-[#5E6673]"> · {shortUserId}</span>}
+                                                <div className="text-xs text-[#B7BDC6]">
+                                                    Account{shortUserId && <span className="text-[#B7BDC6]"> · {shortUserId}</span>}
                                                 </div>
-                                                <div className="mt-3 text-xs text-[#848E9C]">Total balance</div>
+                                                <div className="mt-3 text-xs text-[#B7BDC6]">Total balance</div>
                                                 <div className="mt-0.5 text-xl font-semibold text-white tabular-nums">
                                                     ${formatUsd(totalNum)} <span className="text-xs font-normal text-[#848E9C]">USDC</span>
                                                 </div>
                                                 <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
                                                     <div>
-                                                        <dt className="text-[#848E9C]">Available</dt>
+                                                        <dt className="text-[#B7BDC6]">Available</dt>
                                                         <dd className="mt-0.5 font-medium text-[#00C076] tabular-nums">${formatUsd(availableNum)}</dd>
                                                     </div>
                                                     <div>
-                                                        <dt className="text-[#848E9C]">In orders</dt>
+                                                        <dt className="text-[#B7BDC6]">In orders</dt>
                                                         <dd className="mt-0.5 text-white tabular-nums">${formatUsd(lockedNum)}</dd>
                                                     </div>
                                                 </dl>

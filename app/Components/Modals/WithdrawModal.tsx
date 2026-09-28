@@ -86,7 +86,7 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
       <form onSubmit={handleSubmit}>
         <AmountField
           label="Amount"
-          hint={<>Available ${formatUsd(available)}</>}
+          hint={<>Available <span className="font-medium text-white">${formatUsd(available)}</span></>}
           value={amount}
           onChange={(v) => {
             setAmount(v);

@@ -69,7 +69,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
       <form onSubmit={handleSubmit}>
         <AmountField
           label="Amount"
-          hint={<>Available ${formatUsd(availableNum)}</>}
+          hint={<>Available <span className="font-medium text-white">${formatUsd(availableNum)}</span></>}
           value={amount}
           onChange={(v) => {
             setAmount(v);
