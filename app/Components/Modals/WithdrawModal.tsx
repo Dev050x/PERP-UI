@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { withdrawApi } from "@/app/utils/httpClient";
+import { withdrawApi, getApiErrorMessage } from "@/app/utils/httpClient";
+import { AmountField, Chip, ModalShell, StatusText, formatUsd } from "./ModalParts";
 
 interface WithdrawModalProps {
   isOpen: boolean;
@@ -9,10 +10,12 @@ interface WithdrawModalProps {
   onSuccess?: () => void;
 }
 
+const PERCENTS = [25, 50, 75, 100];
+
 const WithdrawModal: React.FC<WithdrawModalProps> = ({
   isOpen,
   onClose,
-  availableBalance = "0.00",
+  availableBalance = "0",
   onSuccess,
 }) => {
   const [amount, setAmount] = useState("");
@@ -22,7 +25,12 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Clear form on close so a reopened modal starts fresh
+  const available = parseFloat(availableBalance) || 0;
+  const amountNum = parseFloat(amount);
+  const exceeds = amountNum > available;
+  const isValid = amountNum > 0 && !exceeds;
+
+  // Reset on close so a reopened modal starts fresh
   const handleClose = () => {
     setAmount("");
     setErrorMsg("");
@@ -30,126 +38,99 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
     onClose();
   };
 
-  const handleMaxClick = () => {
-    setAmount(availableBalance);
+  const setPercent = (pct: number) => {
+    setErrorMsg("");
+    // 100% uses the exact balance string so no rounding can exceed it
+    if (pct === 100) {
+      setAmount(availableBalance);
+      return;
+    }
+    const v = Math.floor(available * (pct / 100) * 1e8) / 1e8;
+    setAmount(v > 0 ? String(v) : "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
-
-    if (!amount || parseFloat(amount) <= 0) {
-      setErrorMsg("Please enter a valid withdrawal amount.");
-      return;
-    }
-
-    if (parseFloat(amount) > parseFloat(availableBalance)) {
-      setErrorMsg("Insufficient Available Balance.");
+    if (!isValid) {
+      setErrorMsg(exceeds ? "Amount exceeds your available balance." : "Enter an amount greater than 0.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await withdrawApi(amount);
+      const res = await withdrawApi(amount.replace(/\.$/, ""));
       const isSuccess =
         res?.success === true ||
         !!res?.data ||
-        (res?.msg && (
-          res.msg.toLowerCase().includes("success") ||
-          res.msg.toLowerCase().includes("completed") ||
-          res.msg.toLowerCase().includes("processed")
-        ));
+        (typeof res?.msg === "string" && /success|completed|processed/i.test(res.msg));
 
       if (isSuccess) {
-        setSuccessMsg(res?.msg || `Successfully withdrew $${parseFloat(amount).toFixed(2)} USDC!`);
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new Event("balanceUpdated"));
-        }
-        if (onSuccess) onSuccess();
-        setTimeout(() => {
-          handleClose();
-        }, 1200);
+        setSuccessMsg(`Withdrew $${formatUsd(amountNum)} USDC.`);
+        window.dispatchEvent(new Event("balanceUpdated"));
+        onSuccess?.();
+        setTimeout(handleClose, 1000);
       } else {
-        setErrorMsg(res?.error || res?.msg || "Withdrawal failed.");
+        setErrorMsg(getApiErrorMessage(res, "Withdrawal failed."));
       }
-    } catch (err: any) {
-      const errorData = err.response?.data;
-      setErrorMsg(errorData?.error || errorData?.msg || "Insufficient Balance or request failed.");
+    } catch (err) {
+      setErrorMsg(getApiErrorMessage(err, "Withdrawal failed. Please try again."));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div className="w-full max-w-[420px] bg-[#14161C] border border-[#23262F] rounded-2xl p-6 flex flex-col gap-5 shadow-2xl relative">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#2B2F36] pb-4">
-          <h2 className="text-lg font-bold text-white">Withdraw USDC</h2>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-[#848E9C] hover:text-white hover:bg-[#2B2F36] transition-colors"
-          >
-            ✕
-          </button>
+    <ModalShell title="Withdraw USDC" onClose={handleClose}>
+      <form onSubmit={handleSubmit}>
+        <AmountField
+          label="Amount"
+          hint={<>Available ${formatUsd(available)}</>}
+          value={amount}
+          onChange={(v) => {
+            setAmount(v);
+            setErrorMsg("");
+          }}
+          invalid={!!errorMsg || exceeds}
+          autoFocus
+          action={
+            <button
+              type="button"
+              onClick={() => setPercent(100)}
+              className="text-xs font-semibold text-[#00C076] hover:text-[#00A865]"
+            >
+              MAX
+            </button>
+          }
+        />
+
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {PERCENTS.map((pct) => (
+            <Chip
+              key={pct}
+              active={available > 0 && amount !== "" && Math.abs(amountNum - available * (pct / 100)) < 1e-8}
+              onClick={() => setPercent(pct)}
+            >
+              {pct}%
+            </Chip>
+          ))}
         </div>
 
-        {/* Banners */}
-        {errorMsg && (
-          <div className="p-3 bg-[#3B171E] border border-[#F6465D]/30 rounded-xl text-xs text-[#F6465D]">
-            {errorMsg}
-          </div>
-        )}
-        {successMsg && (
-          <div className="p-3 bg-[#0F3A2C] border border-[#00C076]/30 rounded-xl text-xs text-[#00C076]">
-            {successMsg}
-          </div>
-        )}
+        <StatusText
+          error={errorMsg || (exceeds ? "Amount exceeds your available balance." : "")}
+          success={successMsg}
+        />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Available Balance Display */}
-          <div className="flex justify-between items-center text-xs bg-[#1E2026] p-3 rounded-xl border border-[#2B2F36]">
-            <span className="text-[#848E9C]">Available Balance:</span>
-            <span className="font-bold text-white tabular-nums">${(parseFloat(availableBalance) || 0).toFixed(2)} USDC</span>
-          </div>
-
-          {/* Amount Input */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#848E9C]">Withdrawal Amount</label>
-            <div className="relative flex items-center">
-              <input
-                type="number"
-                step="any"
-                min="0.01"
-                required
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full h-12 pl-4 pr-20 bg-[#1E2026] border border-[#2B2F36] rounded-xl text-base font-semibold text-white placeholder:text-[#5E6673] focus:outline-none focus:border-[#424755]"
-              />
-              <button
-                type="button"
-                onClick={handleMaxClick}
-                className="absolute right-3 px-2 py-1 text-xs font-bold bg-[#2B2F36] hover:bg-[#3B3F48] text-[#00C076] rounded transition-colors"
-              >
-                MAX
-              </button>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-12 mt-2 bg-white hover:bg-[#EAECEF] disabled:opacity-50 text-[#0B0E11] font-bold text-sm rounded-xl transition-all shadow-md active:scale-[0.99]"
-          >
-            {loading ? "Processing..." : "Confirm Withdrawal"}
-          </button>
-        </form>
-      </div>
-    </div>
+        <button
+          type="submit"
+          disabled={loading || !isValid || !!successMsg}
+          className="mt-5 h-11 w-full rounded-md bg-[#F6465D] text-sm font-semibold text-white hover:bg-[#E03E54] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+        >
+          {loading ? "Withdrawing…" : isValid ? `Withdraw $${formatUsd(amountNum)}` : "Withdraw"}
+        </button>
+      </form>
+    </ModalShell>
   );
 };
 
