@@ -124,8 +124,8 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
         <button
           type="submit"
-          disabled={loading || !isValid || !!successMsg}
-          className="mt-5 h-11 w-full rounded-md bg-[#F6465D] text-sm font-semibold text-white hover:bg-[#E03E54] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+          disabled={loading || !!successMsg}
+          className="mt-5 h-11 w-full rounded-md bg-[#F6465D] text-sm font-semibold text-white hover:bg-[#E03E54] disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
         >
           {loading ? "Withdrawing…" : isValid ? `Withdraw $${formatUsd(amountNum)}` : "Withdraw"}
         </button>

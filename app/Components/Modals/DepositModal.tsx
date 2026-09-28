@@ -91,8 +91,8 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
 
         <button
           type="submit"
-          disabled={loading || !isValid || !!successMsg}
-          className="mt-5 h-11 w-full rounded-md bg-[#00C076] text-sm font-semibold text-[#0B0E11] hover:bg-[#00A865] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+          disabled={loading || !!successMsg}
+          className="mt-5 h-11 w-full rounded-md bg-[#00C076] text-sm font-semibold text-[#0B0E11] hover:bg-[#00A865] disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
         >
           {loading ? "Depositing…" : isValid ? `Deposit $${formatUsd(amountNum)}` : "Deposit"}
         </button>

@@ -171,8 +171,11 @@ export async function get24hStats(market: string): Promise<MarketStats24h | null
     let low = lastPrice;
     let volumeUsd = 0;
     for (const c of valid) {
-        high = Math.max(high, parseFloat(c.high));
-        low = Math.min(low, parseFloat(c.low));
+        // Some buckets report 0 for high/low; ignore those
+        const cHigh = parseFloat(c.high);
+        const cLow = parseFloat(c.low);
+        if (cHigh > 0) high = Math.max(high, cHigh);
+        if (cLow > 0) low = Math.min(low, cLow);
         volumeUsd += parseFloat(c.volume || "0") * parseFloat(c.close);
     }
 

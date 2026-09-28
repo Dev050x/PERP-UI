@@ -35,7 +35,7 @@ const ChangePill = ({ s, solid = false }: { s: MarketStats24h; solid?: boolean }
       solid
         ? isUp(s) ? "bg-[#00C076] text-[#0B0E11]" : "bg-[#F6465D] text-white"
         : isUp(s) ? "bg-[#00C076]/10 text-[#00C076]" : "bg-[#F6465D]/10 text-[#F6465D]"
-    } ${solid ? "w-[76px]" : ""}`}
+    } ${solid ? "w-[76px] shrink-0" : ""}`}
   >
     {formatChange(s)}
   </span>
@@ -108,7 +108,8 @@ export default function Home() {
                 <th className="py-3 pl-5 pr-3 text-left font-medium">Market</th>
                 <th className="py-3 px-3 text-right font-medium">Price</th>
                 <th className="py-3 px-3 text-right font-medium">24h change</th>
-                <th className="hidden lg:table-cell py-3 px-3 text-right font-medium">24h high / low</th>
+                <th className="hidden lg:table-cell py-3 px-3 text-right font-medium">24h high</th>
+                <th className="hidden lg:table-cell py-3 px-3 text-right font-medium">24h low</th>
                 <th className="py-3 px-3 text-right font-medium">24h volume</th>
                 <th className="py-3 pl-3 pr-5" aria-label="Trade" />
               </tr>
@@ -133,7 +134,10 @@ export default function Home() {
                       {s ? <ChangePill s={s} /> : <Placeholder />}
                     </td>
                     <td className="hidden lg:table-cell py-4 px-3 text-right tabular-nums text-white">
-                      {s ? `${formatPrice(s.high)} / ${formatPrice(s.low)}` : <Placeholder />}
+                      {s ? `$${formatPrice(s.high)}` : <Placeholder />}
+                    </td>
+                    <td className="hidden lg:table-cell py-4 px-3 text-right tabular-nums text-white">
+                      {s ? `$${formatPrice(s.low)}` : <Placeholder />}
                     </td>
                     <td className="py-4 px-3 text-right tabular-nums text-white">
                       {s ? `$${formatPrice(s.volumeUsd)}` : <Placeholder />}
@@ -157,8 +161,8 @@ export default function Home() {
           <ul className="md:hidden divide-y divide-[#2B2F36]/60">
             <li className="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-[#B7BDC6]">
               <span className="flex-1">Market</span>
-              <span className="w-24 text-right">Price</span>
-              <span className="w-[76px] text-right">24h change</span>
+              <span className="w-24 shrink-0 text-right">Price</span>
+              <span className="w-[76px] shrink-0 text-right">24h change</span>
             </li>
             {MARKETS.map((m) => {
               const s = stats[m.symbol];
@@ -171,7 +175,7 @@ export default function Home() {
                     <div className="min-w-0 flex-1">
                       <MarketLabel market={m} subtitle={s ? `$${formatCompact(s.volumeUsd)} vol` : undefined} />
                     </div>
-                    <div className={`w-24 text-right text-sm font-semibold tabular-nums ${s ? priceColor(s) : ""}`}>
+                    <div className={`w-24 shrink-0 text-right text-sm font-semibold tabular-nums ${s ? priceColor(s) : ""}`}>
                       {s ? `$${formatPrice(s.lastPrice)}` : <Placeholder />}
                     </div>
                     {s ? <ChangePill s={s} solid /> : <Placeholder />}
