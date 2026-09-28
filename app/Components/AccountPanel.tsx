@@ -1,14 +1,14 @@
 "use client"
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  getOpenPositionApi,
+  getAllPositionsApi,
   getOrdersApi,
   getOpenOrdersApi,
   getFillsApi,
   deleteOrderApi,
   createOrderApi,
 } from "../utils/httpClient";
-import { getToken } from "../utils/auth";
+import { getToken, AUTH_CHANGED_EVENT } from "../utils/auth";
 import { useBalanceContext } from "../context/BalanceContext";
 
 type TabType =
@@ -26,78 +26,81 @@ const tabs: TabType[] = [
   "Position History",
 ];
 
+const ACCOUNT_POLL_MS = 5000;
+
 const AccountPanel = ({ market }: { market: string }) => {
   const { availableNum, lockedNum, totalNum } = useBalanceContext();
   const [activeTab, setActiveTab] = useState<TabType>("Balances");
-  const [position, setPosition] = useState<any | null>(null);
+  const [positions, setPositions] = useState<any[]>([]);
   const [openOrdersList, setOpenOrdersList] = useState<any[]>([]);
   const [ordersHistory, setOrdersHistory] = useState<any[]>([]);
   const [fills, setFills] = useState<any[]>([]);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [closingPosition, setClosingPosition] = useState<boolean>(false);
+  const [closingMarket, setClosingMarket] = useState<string | null>(null);
   const [noticeMsg, setNoticeMsg] = useState<{ text: string; isError: boolean; isDepositPrompt?: boolean } | null>(null);
 
-  const fetchAllData = async () => {
-    const token = getToken();
-    if (!token) return;
+  // Ignore responses from a fetch superseded by a newer one (e.g. after switching markets)
+  const requestIdRef = useRef(0);
 
-    try {
-      // 1. Fetch Open Position
-      try {
-        const posRes = await getOpenPositionApi(market);
-        const rawPos = posRes?.data?.position ?? posRes?.position ?? posRes?.data;
-        if (rawPos && Object.keys(rawPos).length > 0 && rawPos.qty && parseFloat(rawPos.qty) > 0) {
-          setPosition(rawPos);
-        } else {
-          setPosition(null);
-        }
-      } catch (e) {
-        setPosition(null);
-      }
-
-      // 3. Fetch Open Orders & Order History
-      try {
-        const [openOrdersRes, allOrdersRes] = await Promise.all([
-          getOpenOrdersApi(market),
-          getOrdersApi(market),
-        ]);
-
-        const rawOpen = openOrdersRes?.data?.orders ?? openOrdersRes?.orders ?? [];
-        const rawAll = allOrdersRes?.data?.orders ?? allOrdersRes?.orders ?? [];
-
-        setOpenOrdersList(Array.isArray(rawOpen) ? rawOpen : []);
-        setOrdersHistory(Array.isArray(rawAll) ? rawAll : []);
-      } catch (e) {
-        setOrdersHistory([]);
-        setOpenOrdersList([]);
-      }
-
-      // 4. Fetch Fills / Position History
-      try {
-        const fillsRes = await getFillsApi();
-        const rawFills = fillsRes?.data?.fills ?? fillsRes?.data ?? fillsRes?.fills ?? [];
-        const parsedFills = Array.isArray(rawFills) ? rawFills : [];
-        setFills(parsedFills);
-      } catch (e) {
-        setFills([]);
-      }
-    } catch (e) {
-      console.error("Failed to fetch AccountPanel data:", e);
+  const fetchAllData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    if (!getToken()) {
+      setPositions([]);
+      setOpenOrdersList([]);
+      setOrdersHistory([]);
+      setFills([]);
+      return;
     }
-  };
+
+    const [posRes, openOrdersRes, allOrdersRes, fillsRes] = await Promise.allSettled([
+      getAllPositionsApi(),
+      getOpenOrdersApi(market),
+      getOrdersApi(market),
+      getFillsApi(),
+    ]);
+    if (requestId !== requestIdRef.current) return;
+
+    if (posRes.status === "fulfilled") {
+      const rawPositions = posRes.value?.data ?? [];
+      setPositions(
+        Array.isArray(rawPositions)
+          ? rawPositions.filter((p: any) => p && parseFloat(p.qty || "0") > 0)
+          : []
+      );
+    }
+    if (openOrdersRes.status === "fulfilled") {
+      const rawOpen = openOrdersRes.value?.data?.orders ?? openOrdersRes.value?.orders ?? [];
+      setOpenOrdersList(Array.isArray(rawOpen) ? rawOpen : []);
+    }
+    if (allOrdersRes.status === "fulfilled") {
+      const rawAll = allOrdersRes.value?.data?.orders ?? allOrdersRes.value?.orders ?? [];
+      setOrdersHistory(Array.isArray(rawAll) ? rawAll : []);
+    }
+    if (fillsRes.status === "fulfilled") {
+      const rawFills = fillsRes.value?.data?.fills ?? fillsRes.value?.data ?? fillsRes.value?.fills ?? [];
+      setFills(Array.isArray(rawFills) ? rawFills : []);
+    }
+  }, [market]);
 
   useEffect(() => {
     fetchAllData();
 
     const handleUpdate = () => fetchAllData();
+    // Resting orders can be filled by other users at any time
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === "visible") fetchAllData();
+    }, ACCOUNT_POLL_MS);
     window.addEventListener("balanceUpdated", handleUpdate);
     window.addEventListener("orderUpdated", handleUpdate);
+    window.addEventListener(AUTH_CHANGED_EVENT, handleUpdate);
 
     return () => {
+      clearInterval(intervalId);
       window.removeEventListener("balanceUpdated", handleUpdate);
       window.removeEventListener("orderUpdated", handleUpdate);
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleUpdate);
     };
-  }, [market]);
+  }, [fetchAllData]);
 
   const handleCancelOrder = async (orderId: string) => {
     if (!orderId) return;
@@ -128,17 +131,18 @@ const AccountPanel = ({ market }: { market: string }) => {
   };
 
   const handleClosePosition = async (pos: any) => {
-    if (!pos || closingPosition) return;
-    setClosingPosition(true);
+    if (!pos || closingMarket) return;
+    const posMarket = pos.market || market;
+    setClosingMarket(posMarket);
     setNoticeMsg(null);
 
     const closeSide = (pos.side || "").toUpperCase() === "LONG" ? "SHORT" : "LONG";
     const closeQty = pos.qty;
-    const baseMarket = (pos.market || market).split("_")[0];
+    const baseMarket = posMarket.split("_")[0];
     const margin = pos.margin || "0";
 
     // Optimistic UI update: remove position from UI immediately
-    setPosition(null);
+    setPositions((prev) => prev.filter((p) => p !== pos));
 
     try {
       const res = await createOrderApi({
@@ -174,7 +178,7 @@ const AccountPanel = ({ market }: { market: string }) => {
       setNoticeMsg({ text: formatted, isError: true });
       fetchAllData();
     } finally {
-      setClosingPosition(false);
+      setClosingMarket(null);
     }
   };
 
@@ -252,8 +256,9 @@ const AccountPanel = ({ market }: { market: string }) => {
               <span className="text-right">PnL</span>
               <span className="text-right">Action</span>
             </div>
-            {position ? (
-              <div className="grid grid-cols-8 items-center text-xs py-2.5 px-2 border-b border-[#23272E]/40 hover:bg-[#2B2F36]/30 transition-colors font-medium">
+            {positions.length > 0 ? (
+              positions.map((position) => (
+              <div key={position.market} className="grid grid-cols-8 items-center text-xs py-2.5 px-2 border-b border-[#23272E]/40 hover:bg-[#2B2F36]/30 transition-colors font-medium">
                 <span className="font-bold text-white text-left">{position.market || market}</span>
                 <span className={`text-left font-bold ${position.side === "LONG" ? "text-[#00C076]" : "text-[#F6465D]"}`}>
                   {position.side}
@@ -268,14 +273,15 @@ const AccountPanel = ({ market }: { market: string }) => {
                 <div className="text-right">
                   <button
                     type="button"
-                    disabled={closingPosition}
+                    disabled={closingMarket !== null}
                     onClick={() => handleClosePosition(position)}
                     className="px-2 py-1 text-[11px] font-bold bg-[#3B171E] hover:bg-[#F6465D] text-[#F6465D] hover:text-white rounded transition-colors disabled:opacity-50"
                   >
-                    {closingPosition ? "Closing..." : "Market Close"}
+                    {closingMarket === position.market ? "Closing..." : "Market Close"}
                   </button>
                 </div>
               </div>
+              ))
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-xs text-[#848E9C]">
                 No open positions
