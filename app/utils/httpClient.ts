@@ -2,6 +2,16 @@ import axios from "axios";
 import { api, BASE_URL } from "./auth";
 import { Depth, Kline, Trade, normalizeDepth } from "./types";
 
+// Extracts a readable message from any of the backend's error shapes (see API.md "Error Response Shapes")
+export function getApiErrorMessage(err: any, fallback: string): string {
+    const data = err?.response?.data ?? err;
+    if (Array.isArray(data?.issues) && data.issues.length > 0) {
+        return data.issues.map((i: any) => (i.path ? `${i.path}: ${i.message}` : i.message)).join(", ");
+    }
+    const msg = data?.error || data?.msg || err?.message;
+    return typeof msg === "string" && msg ? msg : fallback;
+}
+
 // Market Data Endpoints
 export async function getDepth(market: string): Promise<Depth> {
     const baseMarket = market.split("_")[0];

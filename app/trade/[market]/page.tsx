@@ -8,7 +8,7 @@ import TradeView from "@/app/Components/TradeView";
 import { useParams } from "next/navigation";
 
 
-const page = () => {
+const TradePage = () => {
   const {market} = useParams();
   return (
     <div className="bg-[#0B0E11] flex flex-col max-h-screen min-h-screen overflow-y-hidden gap-1">
@@ -38,7 +38,8 @@ const page = () => {
 
               <div className="flex flex-col w-[350px] gap-1">
                 <div className="h-[700px] bg-[#181a20] rounded-[8px]">
-                  <Swap market={market as string}/>
+                  {/* key resets form state (price, qty) when switching markets */}
+                  <Swap key={market as string} market={market as string}/>
                 </div>
               </div>
             </div>
@@ -47,4 +48,4 @@ const page = () => {
   );
 }
 
-export default page
+export default TradePage

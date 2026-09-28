@@ -1,9 +1,12 @@
 "use client"
-import { getDepth, createOrderApi } from "@/app/utils/httpClient";
+import { getDepth, createOrderApi, getApiErrorMessage } from "@/app/utils/httpClient";
 import { getToken } from "@/app/utils/auth";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBalanceContext } from "@/app/context/BalanceContext";
+
+// Digits with an optional decimal part of at most 8 places (API limit)
+const DECIMAL_INPUT = /^\d*\.?\d{0,8}$/;
 
 const Swap = ({ market }: { market: string }) => {
     const router = useRouter();
@@ -105,8 +108,9 @@ const Swap = ({ market }: { market: string }) => {
                 market: baseMarket,
                 side: side === 'buy' ? "LONG" : "SHORT",
                 type: marketStatus,
-                price: marketStatus === 'limit' ? price : undefined,
-                qty: quantity,
+                // Drop a trailing "." left from typing (e.g. "144.")
+                price: marketStatus === 'limit' ? price.replace(/\.$/, "") : undefined,
+                qty: quantity.replace(/\.$/, ""),
                 margin: marginToSend,
             });
 
@@ -118,8 +122,8 @@ const Swap = ({ market }: { market: string }) => {
                     window.dispatchEvent(new Event("balanceUpdated"));
                 }
             } else {
-                const rawErr = res?.error || res?.msg || "Failed to place order";
-                if (typeof rawErr === "string" && checkIsDepositError(rawErr)) {
+                const rawErr = getApiErrorMessage(res, "Failed to place order");
+                if (checkIsDepositError(rawErr)) {
                     setStatusMsg({ text: "Deposit USDC to start trading.", isError: false, isDepositPrompt: true });
                     openDepositModal();
                 } else {
@@ -127,9 +131,8 @@ const Swap = ({ market }: { market: string }) => {
                 }
             }
         } catch (err: any) {
-            const errorData = err.response?.data;
-            const rawErr = errorData?.error || errorData?.msg || err.message || "Order placement failed";
-            if (typeof rawErr === "string" && checkIsDepositError(rawErr)) {
+            const rawErr = getApiErrorMessage(err, "Order placement failed");
+            if (checkIsDepositError(rawErr)) {
                 setStatusMsg({ text: "Deposit USDC to start trading.", isError: false, isDepositPrompt: true });
                 openDepositModal();
             } else {
@@ -248,7 +251,8 @@ const Swap = ({ market }: { market: string }) => {
                             type="text"
                             disabled={marketStatus === 'market'}
                             value={marketStatus === 'market' ? "Market" : price}
-                            onChange={(e) => setPrice(e.target.value)}
+                            onChange={(e) => DECIMAL_INPUT.test(e.target.value) && setPrice(e.target.value)}
+                            inputMode="decimal"
                             placeholder={lastPrice ? parseFloat(lastPrice).toFixed(2) : "0.00"}
                             className="w-full h-11 px-3 bg-[#0B0E11] border border-[#2B2F36] rounded-lg text-sm text-white focus:outline-none focus:border-[#424755] disabled:opacity-50"
                         />
@@ -265,7 +269,12 @@ const Swap = ({ market }: { market: string }) => {
                         <input
                             type="text"
                             value={quantity}
-                            onChange={(e) => setQuantity(e.target.value)}
+                            onChange={(e) => {
+                                if (!DECIMAL_INPUT.test(e.target.value)) return;
+                                setQuantity(e.target.value);
+                                setSliderVal(0);
+                            }}
+                            inputMode="decimal"
                             placeholder="0"
                             className="w-full h-11 px-3 bg-[#0B0E11] border border-[#2B2F36] rounded-lg text-sm text-white focus:outline-none focus:border-[#424755]"
                         />
