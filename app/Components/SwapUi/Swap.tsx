@@ -143,202 +143,222 @@ const Swap = ({ market }: { market: string }) => {
         }
     };
 
-    return (
-        <div className="flex flex-col h-full p-5 justify-between text-[#EAECEF] bg-[#181a20] rounded-[8px]">
-            <div className="flex flex-col gap-4">
-                {/* Side Selector Tabs (Buy / Long vs Sell / Short) */}
-                <div className="grid grid-cols-2 bg-[#0B0E11] rounded-xl gap-0.5">
-                    <button
-                        type="button"
-                        onClick={() => setSide('buy')}
-                        className={`h-11 text-sm font-semibold rounded-lg transition-all ${
-                            side === 'buy'
-                                ? "bg-[#122322] text-[#00C076]"
-                                : "bg-transparent text-[#848E9C] hover:text-white"
-                        }`}
-                    >
-                        Buy / Long
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setSide('sell')}
-                        className={`h-11 text-sm font-semibold rounded-lg transition-all ${
-                            side === 'sell'
-                                ? "bg-[#38161F] text-[#F6465D]"
-                                : "bg-transparent text-[#848E9C] hover:text-white"
-                        }`}
-                    >
-                        Sell / Short
-                    </button>
-                </div>
+    const baseAsset = market ? market.split("_")[0] : "SOL";
+    const isBuy = side === 'buy';
 
-                {/* Status Message Banner */}
+    return (
+        <div className="flex h-full flex-col p-4 text-[#EAECEF]">
+            {/* Side */}
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-[#0B0E11] p-1">
+                <button
+                    type="button"
+                    onClick={() => setSide('buy')}
+                    className={`h-9 rounded-md text-sm font-semibold transition-colors ${
+                        isBuy ? "bg-[#00C076] text-[#0B0E11]" : "text-[#B7BDC6] hover:text-white"
+                    }`}
+                >
+                    Buy / Long
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setSide('sell')}
+                    className={`h-9 rounded-md text-sm font-semibold transition-colors ${
+                        !isBuy ? "bg-[#F6465D] text-white" : "text-[#B7BDC6] hover:text-white"
+                    }`}
+                >
+                    Sell / Short
+                </button>
+            </div>
+
+            {/* Order type */}
+            <div className="mt-4 flex gap-5 border-b border-[#2B2F36] text-sm">
+                {(['limit', 'market'] as const).map((t) => (
+                    <button
+                        key={t}
+                        type="button"
+                        onClick={() => setMarketStatus(t)}
+                        className={`-mb-px border-b-2 pb-2 font-semibold capitalize transition-colors ${
+                            marketStatus === t ? "border-white text-white" : "border-transparent text-[#848E9C] hover:text-white"
+                        }`}
+                    >
+                        {t}
+                    </button>
+                ))}
+            </div>
+
+            {/* Leverage */}
+            <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between text-xs">
+                    <span className="text-[#B7BDC6]">Leverage</span>
+                    <span className="font-semibold text-white tabular-nums">{leverage}x</span>
+                </div>
+                <div className="grid grid-cols-6 gap-1">
+                    {leverageOptions.map((lev) => (
+                        <button
+                            key={lev}
+                            type="button"
+                            onClick={() => setLeverage(lev)}
+                            className={`h-7 rounded-md border text-xs font-medium tabular-nums transition-colors ${
+                                leverage === lev
+                                    ? "border-[#5E6673] bg-[#2B2F36] text-white"
+                                    : "border-[#2B2F36] text-[#B7BDC6] hover:text-white"
+                            }`}
+                        >
+                            {lev}x
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Available */}
+            <div className="mt-4 flex items-center justify-between text-xs">
+                <span className="text-[#B7BDC6]">Available</span>
+                <span className="flex items-center gap-2">
+                    <span className="font-semibold text-white tabular-nums">${availableNum.toFixed(2)} USDC</span>
+                    <button type="button" onClick={openDepositModal} className="font-semibold text-[#00C076] hover:text-[#00A865]">
+                        Deposit
+                    </button>
+                </span>
+            </div>
+
+            {/* Price */}
+            <FieldBox label="Price" unit="USD" className="mt-3">
+                {marketStatus === 'market' ? (
+                    <span className="flex-1 text-right text-sm text-[#848E9C]">Market price</span>
+                ) : (
+                    <>
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            value={price}
+                            onChange={(e) => DECIMAL_INPUT.test(e.target.value) && setPrice(e.target.value)}
+                            placeholder={lastPrice ? parseFloat(lastPrice).toFixed(2) : "0.00"}
+                            className="min-w-0 flex-1 bg-transparent text-right text-sm font-medium text-white tabular-nums placeholder:text-[#5E6673] focus:outline-none"
+                        />
+                        {lastPrice && (
+                            <button
+                                type="button"
+                                onClick={() => setPrice(parseFloat(lastPrice).toFixed(2))}
+                                className="rounded bg-[#2B2F36] px-1.5 py-0.5 text-[10px] font-semibold text-[#B7BDC6] hover:text-white"
+                            >
+                                Last
+                            </button>
+                        )}
+                    </>
+                )}
+            </FieldBox>
+
+            {/* Quantity */}
+            <FieldBox label="Size" unit={baseAsset} className="mt-2">
+                <input
+                    type="text"
+                    inputMode="decimal"
+                    value={quantity}
+                    onChange={(e) => {
+                        if (!DECIMAL_INPUT.test(e.target.value)) return;
+                        setQuantity(e.target.value);
+                        setSliderVal(0);
+                    }}
+                    placeholder="0.00"
+                    className="min-w-0 flex-1 bg-transparent text-right text-sm font-medium text-white tabular-nums placeholder:text-[#5E6673] focus:outline-none"
+                />
+            </FieldBox>
+
+            {/* Size by % of available margin */}
+            <div className="mt-3">
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={sliderVal}
+                    onChange={(e) => handleSliderChange(Number(e.target.value))}
+                    className={`h-1 w-full cursor-pointer appearance-none rounded-full bg-[#2B2F36] ${isBuy ? "accent-[#00C076]" : "accent-[#F6465D]"}`}
+                    aria-label="Size as percentage of available balance"
+                />
+                <div className="mt-2 grid grid-cols-4 gap-1">
+                    {[25, 50, 75, 100].map((pct) => (
+                        <button
+                            key={pct}
+                            type="button"
+                            onClick={() => handleSliderChange(pct)}
+                            className={`h-6 rounded text-[11px] font-medium tabular-nums transition-colors ${
+                                sliderVal === pct ? "bg-[#2B2F36] text-white" : "text-[#848E9C] hover:text-white"
+                            }`}
+                        >
+                            {pct}%
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Summary */}
+            <dl className="mt-4 space-y-2 border-t border-[#2B2F36] pt-4 text-xs">
+                <div className="flex justify-between">
+                    <dt className="text-[#B7BDC6]">Order value</dt>
+                    <dd className="font-medium text-white tabular-nums">${orderValue}</dd>
+                </div>
+                <div className="flex justify-between">
+                    <dt className="text-[#B7BDC6]">Margin required</dt>
+                    <dd className="font-medium text-white tabular-nums">${marginRequired}</dd>
+                </div>
+                <div className="flex justify-between">
+                    <dt className="text-[#B7BDC6]">Est. liquidation price</dt>
+                    <dd className="font-medium text-white tabular-nums">--</dd>
+                </div>
+            </dl>
+
+            <div className="mt-auto pt-4">
                 {statusMsg && (
-                    <div className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 ${
-                        statusMsg.isError 
-                            ? "bg-[#3B171E] text-[#F6465D] border border-[#F6465D]/30" 
-                            : statusMsg.isDepositPrompt
-                                ? "bg-[#1E2026] text-[#EAECEF] border border-[#00C076]/40"
-                                : "bg-[#0F3A2C] text-[#00C076] border border-[#00C076]/30"
-                    }`}>
-                        <span>{statusMsg.text}</span>
+                    <div className="mb-3 flex items-center justify-between gap-2 text-xs">
+                        <span className={statusMsg.isError ? "text-[#F6465D]" : statusMsg.isDepositPrompt ? "text-[#EAECEF]" : "text-[#00C076]"}>
+                            {statusMsg.text}
+                        </span>
                         {statusMsg.isDepositPrompt && (
                             <button
                                 type="button"
                                 onClick={openDepositModal}
-                                className="px-3 py-1 text-xs font-bold text-black bg-[#00C076] hover:bg-[#00C076]/90 rounded-lg shrink-0 transition-colors"
+                                className="shrink-0 font-semibold text-[#00C076] hover:text-[#00A865]"
                             >
-                                Deposit Funds
+                                Deposit
                             </button>
                         )}
                     </div>
                 )}
-
-                {/* Order Type Tabs */}
-                <div className="flex items-center gap-4 border-b border-[#2B2F36] pb-2 text-xs font-semibold">
-                    <button
-                        type="button"
-                        onClick={() => setMarketStatus('limit')}
-                        className={`${marketStatus === 'limit' ? "text-white font-bold border-b-2 border-white pb-1 -mb-[9px]" : "text-[#848E9C] hover:text-white"}`}
-                    >
-                        Limit
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMarketStatus('market')}
-                        className={`${marketStatus === 'market' ? "text-white font-bold border-b-2 border-white pb-1 -mb-[9px]" : "text-[#848E9C] hover:text-white"}`}
-                    >
-                        Market
-                    </button>
-                </div>
-
-                {/* Leverage Selector */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center text-sm px-0.5">
-                        <span className="text-[#848E9C]">Leverage</span>
-                    </div>
-                    <div className="grid grid-cols-6 gap-1 bg-[#0B0E11] p-1 rounded-lg">
-                        {leverageOptions.map((lev) => (
-                            <button
-                                key={lev}
-                                type="button"
-                                onClick={() => setLeverage(lev)}
-                                className={`py-1.5 text-[12px] rounded transition-all ${
-                                    leverage === lev
-                                        ? "bg-[#2B2F36] text-white"
-                                        : "text-[#848E9C] hover:text-white"
-                                }`}
-                            >
-                                {lev}x
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Available Equity */}
-                <div className="flex justify-between items-center text-xs px-0.5">
-                    <span className="text-[#848E9C]">Available Equity</span>
-                    <span className="font-semibold text-white">${availableNum.toFixed(2)} USDC</span>
-                </div>
-
-                {/* Price Input */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center text-xs px-0.5">
-                        <span className="text-[#848E9C]">Price</span>
-                    </div>
-                    <div className="relative flex items-center">
-                        <input
-                            type="text"
-                            disabled={marketStatus === 'market'}
-                            value={marketStatus === 'market' ? "Market" : price}
-                            onChange={(e) => DECIMAL_INPUT.test(e.target.value) && setPrice(e.target.value)}
-                            inputMode="decimal"
-                            placeholder={lastPrice ? parseFloat(lastPrice).toFixed(2) : "0.00"}
-                            className="w-full h-11 px-3 bg-[#0B0E11] border border-[#2B2F36] rounded-lg text-sm text-white focus:outline-none focus:border-[#424755] disabled:opacity-50"
-                        />
-                        <span className="absolute right-3 text-xs text-[#848E9C] font-semibold">$</span>
-                    </div>
-                </div>
-
-                {/* Quantity Input */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center text-xs">
-                        <span className="text-[#848E9C]">Quantity</span>
-                    </div>
-                    <div className="relative flex items-center">
-                        <input
-                            type="text"
-                            value={quantity}
-                            onChange={(e) => {
-                                if (!DECIMAL_INPUT.test(e.target.value)) return;
-                                setQuantity(e.target.value);
-                                setSliderVal(0);
-                            }}
-                            inputMode="decimal"
-                            placeholder="0"
-                            className="w-full h-11 px-3 bg-[#0B0E11] border border-[#2B2F36] rounded-lg text-sm text-white focus:outline-none focus:border-[#424755]"
-                        />
-                        <span className="absolute right-3 text-xs text-[#848E9C] font-semibold">{market ? market.split("_")[0] : "SOL"}</span>
-                    </div>
-                </div>
-
-                {/* Continuous Percentage Slider (0-100% with point buttons) */}
-                <div className="flex flex-col gap-2 my-1">
-                    <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={sliderVal}
-                        onChange={(e) => handleSliderChange(Number(e.target.value))}
-                        className="w-full h-1.5 bg-[#2B2F36] rounded-lg appearance-none cursor-pointer accent-[#2EBD85]"
-                    />
-                    <div className="flex justify-between text-[11px] text-[#848E9C] px-1">
-                        {[0, 25, 50, 75, 100].map((pct) => (
-                            <button
-                                key={pct}
-                                type="button"
-                                onClick={() => handleSliderChange(pct)}
-                                className={`hover:text-white transition-colors ${sliderVal === pct ? "text-[#00C076] font-bold" : ""}`}
-                            >
-                                {pct}%
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Order Summary Values */}
-                <div className="flex flex-col gap-2.5 pt-3 border-t border-[#2B2F36] text-xs">
-                    <div className="flex justify-between text-[#848E9C]">
-                        <span>Order Value</span>
-                        <span className="text-white font-medium">${orderValue}</span>
-                    </div>
-                    <div className="flex justify-between text-[#848E9C]">
-                        <span>Margin Required</span>
-                        <span className="text-white font-medium">${marginRequired}</span>
-                    </div>
-                    <div className="flex justify-between text-[#848E9C]">
-                        <span>Est. Liquidation Price</span>
-                        <span className="text-white font-medium">--</span>
-                    </div>
-                </div>
+                <button
+                    type="button"
+                    disabled={loading}
+                    onClick={handlePlaceOrder}
+                    className={`h-11 w-full rounded-md text-sm font-bold transition-colors disabled:opacity-60 ${
+                        isBuy
+                            ? "bg-[#00C076] text-[#0B0E11] hover:bg-[#00A865]"
+                            : "bg-[#F6465D] text-white hover:bg-[#E03E54]"
+                    }`}
+                >
+                    {loading ? "Submitting…" : `${isBuy ? "Buy / Long" : "Sell / Short"} ${baseAsset}`}
+                </button>
             </div>
-
-            {/* Action Button */}
-            <button
-                type="button"
-                disabled={loading}
-                onClick={handlePlaceOrder}
-                className={`w-full h-12 rounded-lg text-sm font-bold transition-all shadow-md mt-4 disabled:opacity-50 ${
-                    side === 'buy'
-                        ? "bg-[#2EBD85] hover:bg-[#28a774] text-black"
-                        : "bg-[#F6465D] hover:bg-[#e03e54] text-white"
-                }`}
-            >
-                {loading ? "Submitting..." : side === 'buy' ? "Buy / Long" : "Sell / Short"}
-            </button>
         </div>
     );
 };
+
+// Input row with the label on the left and unit on the right
+const FieldBox = ({
+    label,
+    unit,
+    className = "",
+    children,
+}: {
+    label: string;
+    unit: string;
+    className?: string;
+    children: React.ReactNode;
+}) => (
+    <label className={`flex h-10 items-center gap-2 rounded-md border border-[#2B2F36] bg-[#0B0E11] px-3 transition-colors focus-within:border-[#5E6673] ${className}`}>
+        <span className="text-xs text-[#B7BDC6]">{label}</span>
+        {children}
+        <span className="w-9 text-right text-xs text-[#848E9C]">{unit}</span>
+    </label>
+);
 
 export default Swap;
