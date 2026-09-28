@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "./Components/Header";
+import LogoMark from "./Components/LogoMark";
 import { get24hStats, MarketStats24h } from "./utils/httpClient";
 import { usePolling } from "./utils/usePolling";
 
@@ -262,18 +263,12 @@ export default function Home() {
               </svg>
             </Link>
             </div>
-            <Image
-              src="/logo.png"
-              alt=""
-              width={228}
-              height={228}
-              className="hidden sm:block h-36 w-36 lg:h-44 lg:w-44 shrink-0"
-            />
+            <LogoMark className="hidden sm:block h-36 w-36 lg:h-44 lg:w-44 shrink-0 text-white motion-safe:animate-[spin_24s_linear_infinite]" />
           </div>
 
           <div className="flex flex-col items-center gap-4 border-t border-white/5 py-6 sm:flex-row sm:justify-between">
             <span className="flex items-center gap-2 text-sm font-semibold tracking-wide text-white">
-              <Image src="/logo.png" alt="" width={20} height={20} />
+              <LogoMark className="h-5 w-5" />
               PERP
             </span>
             <span className="text-xs text-[#848E9C]">© {new Date().getFullYear()} PERP. All rights reserved.</span>
