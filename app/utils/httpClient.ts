@@ -47,6 +47,22 @@ export async function signInApi(username: string, password: string) {
     return response.data;
 }
 
+// The engine reports "user does not deposit any asset" for users with no balance;
+// treat that as an empty result instead of an error.
+const isNotDepositedError = (msg: string) =>
+    msg.includes("user does not deposit") || msg.includes("deposit any asset");
+
+async function getOrEmpty(path: string, empty: unknown, isEmptyError = isNotDepositedError): Promise<any> {
+    try {
+        const response = await api.get(path);
+        return response.data;
+    } catch (err: any) {
+        const errMsg = err.response?.data?.error || err.response?.data?.msg || err.message;
+        if (typeof errMsg === "string" && isEmptyError(errMsg)) return empty;
+        throw err;
+    }
+}
+
 // Balance & Wallet Endpoints
 export interface BalanceData {
     availableBalance: string;
@@ -64,16 +80,7 @@ export function extractBalance(res: any): BalanceData {
 }
 
 export async function getBalanceApi(): Promise<{ data: any }> {
-    try {
-        const response = await api.get("/balance");
-        return response.data;
-    } catch (err: any) {
-        const errMsg = err.response?.data?.error || err.response?.data?.msg || err.message;
-        if (errMsg && typeof errMsg === "string" && (errMsg.includes("user does not deposit") || errMsg.includes("deposit any asset"))) {
-            return { data: { userBalance: { availableBalance: "0.00", lockedBalance: "0.00" } } };
-        }
-        throw err;
-    }
+    return getOrEmpty("/balance", { data: { userBalance: { availableBalance: "0.00", lockedBalance: "0.00" } } });
 }
 
 export async function depositApi(amount: string) {
@@ -107,75 +114,25 @@ export async function deleteOrderApi(orderId: string) {
 }
 
 export async function getOrdersApi(market: string) {
-    const baseMarket = market.split("_")[0];
-    try {
-        const response = await api.get(`/orders/${baseMarket}`);
-        return response.data;
-    } catch (err: any) {
-        const errMsg = err.response?.data?.error || err.response?.data?.msg || err.message;
-        if (errMsg && typeof errMsg === "string" && (errMsg.includes("user does not deposit") || errMsg.includes("deposit any asset"))) {
-            return { data: { orders: [] } };
-        }
-        throw err;
-    }
+    return getOrEmpty(`/orders/${market.split("_")[0]}`, { data: { orders: [] } });
 }
 
 export async function getOpenOrdersApi(market: string) {
-    const baseMarket = market.split("_")[0];
-    try {
-        const response = await api.get(`/orders/open/${baseMarket}`);
-        return response.data;
-    } catch (err: any) {
-        const errMsg = err.response?.data?.error || err.response?.data?.msg || err.message;
-        if (errMsg && typeof errMsg === "string" && (errMsg.includes("user does not deposit") || errMsg.includes("deposit any asset"))) {
-            return { data: { orders: [] } };
-        }
-        throw err;
-    }
+    return getOrEmpty(`/orders/open/${market.split("_")[0]}`, { data: { orders: [] } });
 }
 
 export async function getOpenPositionApi(market: string) {
-    const baseMarket = market.split("_")[0];
-    try {
-        const response = await api.get(`/position/open/${baseMarket}`);
-        return response.data;
-    } catch (err: any) {
-        const errMsg = err.response?.data?.error || err.response?.data?.msg || err.message;
-        if (errMsg && typeof errMsg === "string" && (errMsg.includes("user does not deposit") || errMsg.includes("deposit any asset"))) {
-            return { data: { position: null } };
-        }
-        throw err;
-    }
+    return getOrEmpty(`/position/open/${market.split("_")[0]}`, { data: { position: null } });
 }
 
 export async function getAllPositionsApi() {
-    try {
-        const response = await api.get("/position/open");
-        return response.data;
-    } catch (err: any) {
-        const errMsg = err.response?.data?.error || err.response?.data?.msg || err.message;
-        if (errMsg && typeof errMsg === "string" && (errMsg.includes("user does not deposit") || errMsg.includes("deposit any asset"))) {
-            return { data: { positions: [] } };
-        }
-        throw err;
-    }
+    return getOrEmpty("/position/open", { data: [] });
 }
 
 export async function getFillsApi() {
-    try {
-        const response = await api.get("/fills");
-        return response.data;
-    } catch (err: any) {
-        const errMsg = err.response?.data?.error || err.response?.data?.msg || err.message;
-        if (errMsg && typeof errMsg === "string" && (
-            errMsg.includes("user does not deposit") ||
-            errMsg.includes("deposit any asset") ||
-            errMsg.toLowerCase().includes("fills does not exist")
-        )) {
-            return { data: [] };
-        }
-        throw err;
-    }
+    return getOrEmpty("/fills", { data: [] }, (msg) =>
+        isNotDepositedError(msg) || msg.toLowerCase().includes("fills does not exist")
+    );
 }
 // 24h Market Stats
 export interface MarketStats24h {
