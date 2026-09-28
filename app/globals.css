@@ -35,3 +35,31 @@ body {
     cursor: not-allowed;
   }
 }
+
+/* Thin dark scrollbars everywhere instead of the browser's white default */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2B2F36 transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2B2F36;
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Hide the scrollbar but keep scrolling (tab rows, etc.) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

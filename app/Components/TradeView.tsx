@@ -85,8 +85,8 @@ export default function TradeView({
     <>
       <div
         ref={chartRef}
-        // 515px on desktop (unchanged); fills the shorter mobile chart panel
-        className="h-[calc(100%-4px)] lg:h-[515px]"
+        // Fills its panel; lightweight-charts autoSize follows resizes
+        className="h-[calc(100%-4px)]"
         style={{ width: "100%", marginTop: 4 }}
       ></div>
     </>
