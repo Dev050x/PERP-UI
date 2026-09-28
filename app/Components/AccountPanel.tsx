@@ -90,13 +90,11 @@ const AccountPanel = ({ market }: { market: string }) => {
     const intervalId = setInterval(() => {
       if (document.visibilityState === "visible") fetchAllData();
     }, ACCOUNT_POLL_MS);
-    window.addEventListener("balanceUpdated", handleUpdate);
     window.addEventListener("orderUpdated", handleUpdate);
     window.addEventListener(AUTH_CHANGED_EVENT, handleUpdate);
 
     return () => {
       clearInterval(intervalId);
-      window.removeEventListener("balanceUpdated", handleUpdate);
       window.removeEventListener("orderUpdated", handleUpdate);
       window.removeEventListener(AUTH_CHANGED_EVENT, handleUpdate);
     };

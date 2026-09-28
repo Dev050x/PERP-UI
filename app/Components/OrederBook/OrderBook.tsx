@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getDepth } from "../../utils/httpClient";
 import { wsManager, DepthData } from "@/app/utils/wsClient";
 import AskTable from "./AskTable";
@@ -11,12 +11,16 @@ const OrderBook = ({ market }: { market: string }) => {
     const [bids, setBids] = useState<[string, string][] | null>(null);
     const [asks, setAsks] = useState<[string, string][] | null>(null);
     const [lastPrice, setLastPrice] = useState<string | null>(null);
+    // Bumped on every WS update; a REST snapshot started before it is stale
+    const wsVersionRef = useRef(0);
     
     useEffect(() => {
         // REST Depth Snapshot
         const fetchDepthSnapshot = async () => {
+            const versionAtStart = wsVersionRef.current;
             try {
                 const { asks, bids } = await getDepth(market);
+                if (wsVersionRef.current !== versionAtStart) return;
                 setAsks(asks);
                 setBids(bids);
                 const best = asks[0]?.[0] ?? bids[0]?.[0];
@@ -34,7 +38,13 @@ const OrderBook = ({ market }: { market: string }) => {
         window.addEventListener("orderUpdated", handleOrderUpdate);
 
         // Real-Time WebSocket Depth Stream Subscription
-        const unsubscribe = wsManager.subscribeDepth(market, ({ asks, bids }: DepthData) => {
+        const unsubscribe = wsManager.subscribeDepth(market, (data: DepthData | null) => {
+            if (!data) {
+                fetchDepthSnapshot();
+                return;
+            }
+            const { asks, bids } = data;
+            wsVersionRef.current++;
             setAsks(asks);
             setBids(bids);
             const best = asks[0]?.[0] ?? bids[0]?.[0];
