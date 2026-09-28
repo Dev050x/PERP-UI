@@ -222,10 +222,10 @@ const AccountPanel = ({ market }: { market: string }) => {
       )}
 
       {/* Main Body Content */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-4 overflow-y-auto overflow-x-auto lg:overflow-x-visible">
         {/* Balances Tab */}
         {activeTab === "Balances" && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
             <div className="grid grid-cols-4 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Asset</span>
               <span className="text-right">Total Balance</span>
@@ -243,7 +243,7 @@ const AccountPanel = ({ market }: { market: string }) => {
 
         {/* Positions Tab */}
         {activeTab === "Positions" && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
             <div className="grid grid-cols-8 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Market</span>
               <span className="text-left">Side</span>
@@ -290,7 +290,7 @@ const AccountPanel = ({ market }: { market: string }) => {
 
         {/* Open Orders Tab */}
         {activeTab === "Open Orders" && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
             <div className="grid grid-cols-8 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Time</span>
               <span className="text-left">Market</span>
@@ -347,7 +347,7 @@ const AccountPanel = ({ market }: { market: string }) => {
 
         {/* Order History Tab */}
         {activeTab === "Order History" && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
             <div className="grid grid-cols-7 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Time</span>
               <span className="text-left">Market</span>
@@ -393,7 +393,7 @@ const AccountPanel = ({ market }: { market: string }) => {
 
         {/* Position History / Fills Tab */}
         {activeTab === "Position History" && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
             <div className="grid grid-cols-5 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Market</span>
               <span className="text-[#848E9C] text-left">Buy Order</span>
