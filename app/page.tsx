@@ -79,62 +79,77 @@ export default function Home() {
         <Header />
       </div>
 
-      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col gap-6">
-        <section className="flex flex-col items-center text-center gap-5 py-4 sm:py-8">
-          <h1 className="max-w-2xl text-3xl sm:text-5xl font-bold tracking-tight text-white">
-            Trade Perpetual Futures with Sub-Millisecond Speed
+      <main className="w-full">
+        {/* Hero */}
+        <section className="mx-auto flex max-w-3xl flex-col items-center px-4 sm:px-6 pt-12 sm:pt-20 text-center">
+          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white leading-[1.05]">
+            Trade Perpetual Futures with <span className="text-[#00C076]">Sub-Millisecond</span> Speed
           </h1>
-          <p className="max-w-xl text-sm sm:text-base text-[#B7BDC6]">
+          <p className="mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-[#B7BDC6]">
             Experience ultra-fast order matching, in-memory execution, deep liquidity, and up to 50x leverage.
           </p>
-          <dl className="flex justify-center gap-10 text-sm">
-            <div>
-              <dt className="text-xs text-[#B7BDC6]">24h volume</dt>
-              <dd className="mt-0.5 font-medium text-white tabular-nums">
-                {loaded ? `$${formatPrice(totalVolume)}` : "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-[#B7BDC6]">Markets</dt>
-              <dd className="mt-0.5 font-medium text-white tabular-nums">{MARKETS.length}</dd>
-            </div>
-          </dl>
-        </section>
-      </main>
-
-      {/* Product showcase */}
-      <section className="w-full overflow-hidden px-4 sm:px-6 pt-4 pb-4 sm:pt-10 sm:pb-6">
-        <div className="mx-auto flex max-w-7xl flex-col items-center text-center">
-          <span className="rounded-full border border-[#00C076]/30 bg-[#00C076]/10 px-2.5 py-0.5 font-mono text-xs text-[#00C076]">
-            Product
-          </span>
-          <h2 className="mt-4 text-3xl sm:text-5xl font-bold tracking-tight text-white">The Terminal</h2>
-          <p className="mt-3 text-sm sm:text-base text-[#B7BDC6]">
-            Order book, live chart, positions and order entry on one screen.
-          </p>
-
-          <div className="relative mt-8 sm:mt-14 w-full [perspective:2400px]">
-            {/* Soft green glow behind the screenshot */}
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-2/3 w-2/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00C076]/10 blur-3xl" />
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/trade/SOL"
-              aria-label="Open the trading terminal"
-              className="relative block overflow-hidden rounded-lg border border-[#2B2F36] shadow-2xl shadow-black/60 transition-transform duration-500 md:[transform:rotateX(32deg)_rotateZ(-10deg)] md:hover:[transform:rotateX(24deg)_rotateZ(-7deg)]"
+              className="inline-flex h-11 items-center rounded-md bg-[#00C076] px-6 text-sm font-semibold text-[#0B0E11] hover:bg-[#00A865] transition-colors"
             >
+              Start Trading
+            </Link>
+            <a
+              href="#markets"
+              className="inline-flex h-11 items-center rounded-md border border-[#2B2F36] px-6 text-sm font-semibold text-white hover:bg-[#1E2026] transition-colors"
+            >
+              View Markets
+            </a>
+          </div>
+        </section>
+
+        {/* App preview: framed screenshot, cropped at the bottom by the stats bar */}
+        <section className="mx-auto mt-12 sm:mt-16 max-w-5xl px-4 sm:px-6">
+          <Link
+            href="/trade/SOL"
+            aria-label="Open the trading terminal"
+            className="block h-[200px] sm:h-[340px] lg:h-[420px] overflow-hidden rounded-t-2xl border border-b-0 border-[#2B2F36] bg-[#14161C] p-1.5 sm:p-2 pb-0 sm:pb-0"
+          >
+            <div className="overflow-hidden rounded-t-xl border border-b-0 border-[#2B2F36]">
               <Image
                 src="/assets/trading-ui.webp"
                 alt="PERP trading terminal with order book, candlestick chart and order form"
                 width={1917}
                 height={928}
-                sizes="(min-width: 1280px) 1280px, 100vw"
+                priority
+                sizes="(min-width: 1024px) 1024px, 100vw"
                 className="block h-auto w-full"
               />
-            </Link>
-          </div>
-        </div>
-      </section>
+            </div>
+          </Link>
+        </section>
 
-      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 pb-10 sm:pb-16">
+        {/* Stats bar */}
+        <section className="border-y border-[#2B2F36] bg-[#0B0E11]">
+          <dl className="mx-auto grid max-w-4xl grid-cols-2 sm:grid-cols-4 px-4 py-6 sm:py-8">
+            {[
+              { label: "24h Volume", value: loaded ? `$${formatCompact(totalVolume)}` : "—" },
+              { label: "Markets", value: String(MARKETS.length) },
+              { label: "Max Leverage", value: "50x" },
+              { label: "Collateral", value: "USDC" },
+            ].map((stat, i) => (
+              <div
+                key={stat.label}
+                className={`flex flex-col-reverse items-center py-3 sm:py-0 ${
+                  i > 0 ? "sm:border-l border-[#2B2F36]" : ""
+                } ${i % 2 === 1 ? "border-l sm:border-l" : ""}`}
+              >
+                <dt className="mt-1 text-sm text-[#B7BDC6]">{stat.label}</dt>
+                <dd className="text-2xl sm:text-3xl font-semibold text-white tabular-nums">{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      </main>
+
+      <div id="markets" className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-10 sm:pb-16 scroll-mt-16">
+        <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white">Markets</h2>
         <section className="rounded-lg border border-[#2B2F36] bg-[#181a20] overflow-hidden">
           {/* Desktop / tablet table */}
           <table className="hidden md:table w-full text-sm">
