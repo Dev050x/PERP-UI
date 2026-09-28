@@ -120,7 +120,7 @@ const Header = () => {
                                                 <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
                                                     <div>
                                                         <dt className="text-[#848E9C]">Available</dt>
-                                                        <dd className="mt-0.5 text-white tabular-nums">${formatUsd(availableNum)}</dd>
+                                                        <dd className="mt-0.5 font-medium text-[#00C076] tabular-nums">${formatUsd(availableNum)}</dd>
                                                     </div>
                                                     <div>
                                                         <dt className="text-[#848E9C]">In orders</dt>
@@ -146,7 +146,7 @@ const Header = () => {
                                                             setIsProfileOpen(false);
                                                             setIsWithdrawOpen(true);
                                                         }}
-                                                        className="h-8 rounded-md border border-[#2B2F36] text-xs font-semibold text-white hover:bg-[#2B2F36] transition-colors"
+                                                        className="h-8 rounded-md bg-[#F6465D]/15 text-xs font-semibold text-[#F6465D] hover:bg-[#F6465D]/25 transition-colors"
                                                     >
                                                         Withdraw
                                                     </button>
@@ -156,7 +156,7 @@ const Header = () => {
                                             <button
                                                 type="button"
                                                 onClick={handleLogout}
-                                                className="w-full border-t border-[#2B2F36] px-4 py-2.5 text-left text-sm text-[#B7BDC6] hover:bg-[#1E2026] hover:text-white transition-colors rounded-b-lg"
+                                                className="w-full border-t border-[#2B2F36] px-4 py-2.5 text-left text-sm text-[#F6465D] hover:bg-[#F6465D]/10 transition-colors rounded-b-lg"
                                             >
                                                 Log out
                                             </button>
