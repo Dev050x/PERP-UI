@@ -1,5 +1,5 @@
 "use client"
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   getAllPositionsApi,
   getOrdersApi,
@@ -222,10 +222,21 @@ const AccountPanel = ({ market }: { market: string }) => {
       )}
 
       {/* Main Body Content */}
-      <div className="flex-1 p-4 overflow-y-auto overflow-x-auto lg:overflow-x-visible">
+      <div className="flex-1 p-3 lg:p-4 overflow-y-auto">
         {/* Balances Tab */}
         {activeTab === "Balances" && (
-          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
+          <>
+          <div className="lg:hidden">
+            <Card>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-white">USDC</span>
+                <span className="text-sm font-bold text-white tabular-nums">${totalBalance}</span>
+              </div>
+              <Row label="Available" value={`$${formattedAvail}`} valueClass="text-[#00C076]" />
+              <Row label="In orders" value={`$${formattedLocked}`} />
+            </Card>
+          </div>
+          <div className="hidden lg:flex flex-col gap-1">
             <div className="grid grid-cols-4 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Asset</span>
               <span className="text-right">Total Balance</span>
@@ -239,11 +250,43 @@ const AccountPanel = ({ market }: { market: string }) => {
               <span className="text-right tabular-nums text-[#EAECEF]">${formattedLocked}</span>
             </div>
           </div>
+          </>
         )}
 
         {/* Positions Tab */}
         {activeTab === "Positions" && (
-          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
+          <>
+          <div className="lg:hidden flex flex-col gap-2">
+            {positions.length > 0 ? positions.map((position) => {
+              const pnl = parseFloat(position.pnl || "0");
+              return (
+                <Card key={position.market}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{position.market || market}</span>
+                      <SideBadge side={position.side} />
+                    </div>
+                    <span className={`text-sm font-bold tabular-nums ${pnl >= 0 ? "text-[#00C076]" : "text-[#F6465D]"}`}>
+                      {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
+                    </span>
+                  </div>
+                  <Row label="Size" value={parseFloat(position.qty || "0").toFixed(4)} />
+                  <Row label="Entry price" value={`$${parseFloat(position.averagePrice || "0").toFixed(2)}`} />
+                  <Row label="Margin" value={`$${parseFloat(position.margin || "0").toFixed(2)}`} />
+                  <Row label="Liq. price" value={`$${parseFloat(position.liquidationPrice || "0").toFixed(2)}`} valueClass="text-[#F6465D]" />
+                  <button
+                    type="button"
+                    disabled={closingMarket !== null}
+                    onClick={() => handleClosePosition(position)}
+                    className="mt-3 h-9 w-full rounded-md bg-[#F6465D]/15 text-xs font-bold text-[#F6465D] hover:bg-[#F6465D]/25 disabled:opacity-50 transition-colors"
+                  >
+                    {closingMarket === position.market ? "Closing..." : "Market Close"}
+                  </button>
+                </Card>
+              );
+            }) : <Empty text="No open positions" />}
+          </div>
+          <div className="hidden lg:flex flex-col gap-1">
             <div className="grid grid-cols-8 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Market</span>
               <span className="text-left">Side</span>
@@ -286,11 +329,41 @@ const AccountPanel = ({ market }: { market: string }) => {
               </div>
             )}
           </div>
+          </>
         )}
 
         {/* Open Orders Tab */}
         {activeTab === "Open Orders" && (
-          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
+          <>
+          <div className="lg:hidden flex flex-col gap-2">
+            {openOrdersList.length > 0 ? openOrdersList.map((ord: any, idx: number) => {
+              const orderId = ord.id || ord.orderId;
+              return (
+                <Card key={orderId || idx}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{ord.market || market}</span>
+                      <SideBadge side={ord.side} />
+                      <span className="text-[11px] uppercase text-[#B7BDC6]">{ord.type || "limit"}</span>
+                    </div>
+                    <span className="text-[11px] text-[#B7BDC6]">{formatTime(ord.createdAt)}</span>
+                  </div>
+                  <Row label="Price" value={ord.price ? `$${parseFloat(ord.price).toFixed(2)}` : "Market"} />
+                  <Row label="Quantity" value={parseFloat(ord.quantity || ord.qty || "0").toFixed(2)} />
+                  <Row label="Status" value={ord.status || "open"} valueClass="capitalize text-[#00C076]" />
+                  <button
+                    type="button"
+                    disabled={cancellingId === orderId}
+                    onClick={() => handleCancelOrder(orderId)}
+                    className="mt-3 h-9 w-full rounded-md bg-[#2B2F36] text-xs font-bold text-white hover:bg-[#363A45] disabled:opacity-50 transition-colors"
+                  >
+                    {cancellingId === orderId ? "Cancelling..." : "Cancel"}
+                  </button>
+                </Card>
+              );
+            }) : <Empty text="No open orders" />}
+          </div>
+          <div className="hidden lg:flex flex-col gap-1">
             <div className="grid grid-cols-8 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Time</span>
               <span className="text-left">Market</span>
@@ -343,11 +416,32 @@ const AccountPanel = ({ market }: { market: string }) => {
               </div>
             )}
           </div>
+          </>
         )}
 
         {/* Order History Tab */}
         {activeTab === "Order History" && (
-          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
+          <>
+          <div className="lg:hidden flex flex-col gap-2">
+            {ordersHistory.length > 0 ? ordersHistory.map((ord: any, idx: number) => (
+              <Card key={ord.id || ord.orderId || idx}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">{ord.market || market}</span>
+                    <SideBadge side={ord.side} />
+                    <span className="text-[11px] uppercase text-[#B7BDC6]">{ord.type || "limit"}</span>
+                  </div>
+                  <span className={`text-xs font-semibold capitalize ${ord.status === "Filled" ? "text-[#00C076]" : ord.status === "Cancel" ? "text-[#F6465D]" : "text-white"}`}>
+                    {ord.status || "open"}
+                  </span>
+                </div>
+                <Row label="Price" value={ord.price ? `$${parseFloat(ord.price).toFixed(2)}` : "Market"} />
+                <Row label="Quantity" value={parseFloat(ord.quantity || ord.qty || "0").toFixed(2)} />
+                <Row label="Time" value={formatTime(ord.createdAt)} />
+              </Card>
+            )) : <Empty text="No order history" />}
+          </div>
+          <div className="hidden lg:flex flex-col gap-1">
             <div className="grid grid-cols-7 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Time</span>
               <span className="text-left">Market</span>
@@ -389,11 +483,26 @@ const AccountPanel = ({ market }: { market: string }) => {
               </div>
             )}
           </div>
+          </>
         )}
 
         {/* Position History / Fills Tab */}
         {activeTab === "Position History" && (
-          <div className="flex flex-col gap-1 min-w-[640px] lg:min-w-0">
+          <>
+          <div className="lg:hidden flex flex-col gap-2">
+            {fills.length > 0 ? fills.map((fill: any, idx: number) => (
+              <Card key={idx}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-white">{fill.market || market}</span>
+                  <span className="text-sm font-bold text-[#00C076] tabular-nums">${parseFloat(fill.price || "0").toFixed(2)}</span>
+                </div>
+                <Row label="Filled qty" value={parseFloat(fill.qty || fill.quantity || "0").toFixed(2)} />
+                <Row label="Buy order" value={shortId(fill.buyOrderId)} />
+                <Row label="Sell order" value={shortId(fill.sellOrderId)} />
+              </Card>
+            )) : <Empty text="No position history" />}
+          </div>
+          <div className="hidden lg:flex flex-col gap-1">
             <div className="grid grid-cols-5 items-center text-xs font-semibold text-[#848E9C] border-b border-[#2B2F36] pb-2 px-2">
               <span className="text-left">Market</span>
               <span className="text-[#848E9C] text-left">Buy Order</span>
@@ -417,10 +526,41 @@ const AccountPanel = ({ market }: { market: string }) => {
               </div>
             )}
           </div>
+          </>
         )}
       </div>
     </div>
   );
 };
+
+const Card = ({ children }: { children: React.ReactNode }) => (
+  <div className="rounded-lg border border-[#2B2F36]/70 bg-[#1E2026] p-3">{children}</div>
+);
+
+const Row = ({ label, value, valueClass = "text-white" }: { label: string; value: React.ReactNode; valueClass?: string }) => (
+  <div className="mt-2 flex items-center justify-between text-xs">
+    <span className="text-[#B7BDC6]">{label}</span>
+    <span className={`font-medium tabular-nums ${valueClass}`}>{value}</span>
+  </div>
+);
+
+const SideBadge = ({ side }: { side?: string }) => {
+  const s = (side || "").toUpperCase();
+  const isLong = s === "LONG" || s === "BUY";
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${isLong ? "bg-[#00C076]/15 text-[#00C076]" : "bg-[#F6465D]/15 text-[#F6465D]"}`}>
+      {s}
+    </span>
+  );
+};
+
+const Empty = ({ text }: { text: string }) => (
+  <div className="flex items-center justify-center py-10 text-xs text-[#B7BDC6]">{text}</div>
+);
+
+const formatTime = (iso?: string) =>
+  iso ? new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "--";
+
+const shortId = (id?: string) => (id ? `${id.slice(0, 6)}…${id.slice(-4)}` : "--");
 
 export default AccountPanel;
