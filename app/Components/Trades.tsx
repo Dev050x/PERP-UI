@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { getTrades } from "../utils/httpClient"
 import { Trade } from "../utils/types";
+import { usePolling } from "../utils/usePolling";
 
 const Trades = ({ market, hideHeader = false }: { market: string; hideHeader?: boolean }) => {
     const [trades, setTrades] = useState<Trade[] | null>(null);
@@ -15,20 +16,15 @@ const Trades = ({ market, hideHeader = false }: { market: string; hideHeader?: b
         }
     };
 
+    // No trade push channel over WS, so poll (paused while the tab is hidden)
+    usePolling(fetchRecentTrades, 2000, [market]);
+
     useEffect(() => {
-        fetchRecentTrades();
-
-        // 1. Polling interval every 2 seconds for fresh trades
-        const intervalId = setInterval(fetchRecentTrades, 2000);
-
-        // 2. Window event listener for immediate updates on order placement
+        // Immediate refresh on local order placement
         const handleOrderUpdate = () => fetchRecentTrades();
         window.addEventListener("orderUpdated", handleOrderUpdate);
-
-        return () => {
-            clearInterval(intervalId);
-            window.removeEventListener("orderUpdated", handleOrderUpdate);
-        };
+        return () => window.removeEventListener("orderUpdated", handleOrderUpdate);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [market]);
 
     return (
