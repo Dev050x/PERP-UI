@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useBalanceContext } from "../context/BalanceContext";
 import { getToken, getUserId, removeAuthData } from "../utils/auth";
@@ -59,7 +60,8 @@ const Header = () => {
                 <div className="flex items-center justify-between">
                     {/* Navigation */}
                     <div className="flex items-center flex-row">
-                        <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 hover:opacity-90 shrink-0 text-white">
+                        <Link href="/" className="flex items-center gap-2 h-8 text-sm font-semibold ml-4 hover:opacity-90 shrink-0 text-white">
+                            <Image src="/logo.png" alt="" width={22} height={22} priority />
                             PERP
                         </Link>
                         <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 sm:ml-6 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">

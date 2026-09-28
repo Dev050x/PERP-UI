@@ -263,7 +263,10 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col items-center gap-4 border-t border-white/5 py-6 sm:flex-row sm:justify-between">
-            <span className="text-sm font-semibold tracking-wide text-white">PERP</span>
+            <span className="flex items-center gap-2 text-sm font-semibold tracking-wide text-white">
+              <Image src="/logo.png" alt="" width={20} height={20} />
+              PERP
+            </span>
             <span className="text-xs text-[#848E9C]">© {new Date().getFullYear()} PERP. All rights reserved.</span>
             <div className="flex items-center gap-4 text-[#B7BDC6]">
               <a href="https://x.com/div5533" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="hover:text-white transition-colors">
