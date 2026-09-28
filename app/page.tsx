@@ -113,7 +113,7 @@ export default function Home() {
           >
             <div className="overflow-hidden rounded-t-xl border border-b-0 border-white/5">
               <Image
-                src="/assets/trading-ui.webp"
+                src="/assets/trading-terminal.webp"
                 alt="PERP trading terminal with order book, candlestick chart and order form"
                 width={1920}
                 height={935}
@@ -242,7 +242,8 @@ export default function Home() {
       <footer className="border-t border-white/5">
 
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="py-12 sm:py-16">
+          <div className="flex items-center justify-between gap-8 py-12 sm:py-16">
+            <div>
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight text-white">
               Start
               <br />
@@ -260,6 +261,14 @@ export default function Home() {
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </Link>
+            </div>
+            <Image
+              src="/logo.png"
+              alt=""
+              width={228}
+              height={228}
+              className="hidden sm:block h-36 w-36 lg:h-44 lg:w-44 shrink-0"
+            />
           </div>
 
           <div className="flex flex-col items-center gap-4 border-t border-white/5 py-6 sm:flex-row sm:justify-between">
