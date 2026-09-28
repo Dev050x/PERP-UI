@@ -7,8 +7,7 @@ import { useBalanceContext } from "@/app/context/BalanceContext";
 
 const Swap = ({ market }: { market: string }) => {
     const router = useRouter();
-    const { balance, openDepositModal } = useBalanceContext();
-    const availableEquity = balance.availableBalance;
+    const { balance, availableNum, openDepositModal } = useBalanceContext();
     const [side, setSide] = useState<'buy' | 'sell'>('buy');
     const [marketStatus, setMarketStatus] = useState<'limit' | 'market'>('limit');
     const [lastPrice, setLastPrice] = useState<string | null>(null);
@@ -39,22 +38,26 @@ const Swap = ({ market }: { market: string }) => {
 
     const numericPrice = parseFloat(price || lastPrice || "0");
     const numericQty = parseFloat(quantity || "0");
-    const orderValue = (numericQty * numericPrice).toFixed(2);
-    const marginRequired = (numericQty * numericPrice > 0 && leverage > 0)
-        ? ((numericQty * numericPrice) / leverage).toFixed(2)
-        : "0.00";
+    const notional = numericQty * numericPrice;
+    const orderValue = notional.toFixed(2);
+    const marginNum = notional > 0 && leverage > 0 ? notional / leverage : 0;
+    // Sent to the API (max 8 decimals). Clamp float noise so a 100% order never exceeds available balance.
+    const marginToSend = marginNum > availableNum && marginNum - availableNum < 1e-6
+        ? balance.availableBalance
+        : marginNum.toFixed(8);
+    const marginRequired = marginNum.toFixed(2);
 
     const leverageOptions = [1, 2, 5, 10, 20, 50];
 
     const handleSliderChange = (percent: number) => {
         setSliderVal(percent);
-        const avail = parseFloat(availableEquity || "0");
         const currentPrice = parseFloat(price || lastPrice || "0");
 
-        if (avail > 0 && currentPrice > 0) {
-            const marginToUse = avail * (percent / 100);
+        if (availableNum > 0 && currentPrice > 0) {
+            const marginToUse = availableNum * (percent / 100);
             const buyingPower = marginToUse * leverage;
-            const calculatedQty = buyingPower / currentPrice;
+            // Round down so the required margin never exceeds the available balance
+            const calculatedQty = Math.floor((buyingPower / currentPrice) * 1e4) / 1e4;
             setQuantity(calculatedQty > 0 ? calculatedQty.toFixed(4) : "0");
         } else {
             setQuantity("0");
@@ -79,6 +82,11 @@ const Swap = ({ market }: { market: string }) => {
             return;
         }
 
+        if (marginNum > availableNum + 1e-6) {
+            setStatusMsg({ text: `Insufficient balance: margin $${marginRequired} exceeds available $${availableNum.toFixed(2)}.`, isError: false, isDepositPrompt: true });
+            return;
+        }
+
         const baseMarket = market ? market.split("_")[0] : "SOL";
         setLoading(true);
 
@@ -99,7 +107,7 @@ const Swap = ({ market }: { market: string }) => {
                 type: marketStatus,
                 price: marketStatus === 'limit' ? price : undefined,
                 qty: quantity,
-                margin: marginRequired,
+                margin: marginToSend,
             });
 
             if (res?.success) {
@@ -227,7 +235,7 @@ const Swap = ({ market }: { market: string }) => {
                 {/* Available Equity */}
                 <div className="flex justify-between items-center text-xs px-0.5">
                     <span className="text-[#848E9C]">Available Equity</span>
-                    <span className="font-semibold text-white">${availableEquity} USDC</span>
+                    <span className="font-semibold text-white">${availableNum.toFixed(2)} USDC</span>
                 </div>
 
                 {/* Price Input */}

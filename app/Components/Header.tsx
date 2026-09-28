@@ -13,7 +13,7 @@ const UserIcon = () => (
 );
 
 const Header = () => {
-    const { balance, totalNum, openDepositModal } = useBalanceContext();
+    const { balance, availableNum, lockedNum, totalNum, openDepositModal } = useBalanceContext();
     const [loggedIn, setLoggedIn] = useState(false);
     const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -114,11 +114,11 @@ const Header = () => {
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-[#848E9C]">Available Balance</span>
-                                                    <span className="font-semibold text-[#00C076] tabular-nums">${balance.availableBalance} USDC</span>
+                                                    <span className="font-semibold text-[#00C076] tabular-nums">${availableNum.toFixed(2)} USDC</span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-[#848E9C]">Locked Balance</span>
-                                                    <span className="font-medium text-[#EAECEF] tabular-nums">${balance.lockedBalance} USDC</span>
+                                                    <span className="font-medium text-[#EAECEF] tabular-nums">${lockedNum.toFixed(2)} USDC</span>
                                                 </div>
                                             </div>
 

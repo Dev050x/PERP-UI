@@ -16,6 +16,13 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
 
   if (!isOpen) return null;
 
+  // Clear banners on close so a reopened modal starts fresh
+  const handleClose = () => {
+    setErrorMsg("");
+    setSuccessMsg("");
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -46,8 +53,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
         }
         if (onSuccess) onSuccess();
         setTimeout(() => {
-          setSuccessMsg("");
-          onClose();
+          handleClose();
         }, 1200);
       } else {
         setErrorMsg(res?.error || res?.msg || "Deposit failed.");
@@ -68,7 +74,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
           <h2 className="text-lg font-bold text-white">Deposit USDC</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-[#848E9C] hover:text-white hover:bg-[#2B2F36] transition-colors"
           >
             ✕

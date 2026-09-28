@@ -2,6 +2,9 @@ import axios from "axios";
 
 export const BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
+// Fired on window whenever the stored token changes (sign-in / logout)
+export const AUTH_CHANGED_EVENT = "authChanged";
+
 export const getToken = (): string | null => {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("perp_token");
@@ -18,12 +21,14 @@ export const setAuthData = (token: string, userId?: string) => {
   if (userId) {
     localStorage.setItem("perp_userId", userId);
   }
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 };
 
 export const removeAuthData = () => {
   if (typeof window === "undefined") return;
   localStorage.removeItem("perp_token");
   localStorage.removeItem("perp_userId");
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 };
 
 export const isLoggedIn = (): boolean => {

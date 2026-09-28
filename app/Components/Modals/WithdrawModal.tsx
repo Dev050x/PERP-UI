@@ -22,6 +22,14 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
   if (!isOpen) return null;
 
+  // Clear form on close so a reopened modal starts fresh
+  const handleClose = () => {
+    setAmount("");
+    setErrorMsg("");
+    setSuccessMsg("");
+    onClose();
+  };
+
   const handleMaxClick = () => {
     setAmount(availableBalance);
   };
@@ -60,8 +68,7 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
         }
         if (onSuccess) onSuccess();
         setTimeout(() => {
-          setSuccessMsg("");
-          onClose();
+          handleClose();
         }, 1200);
       } else {
         setErrorMsg(res?.error || res?.msg || "Withdrawal failed.");
@@ -82,7 +89,7 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
           <h2 className="text-lg font-bold text-white">Withdraw USDC</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-[#848E9C] hover:text-white hover:bg-[#2B2F36] transition-colors"
           >
             ✕
@@ -105,7 +112,7 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
           {/* Available Balance Display */}
           <div className="flex justify-between items-center text-xs bg-[#1E2026] p-3 rounded-xl border border-[#2B2F36]">
             <span className="text-[#848E9C]">Available Balance:</span>
-            <span className="font-bold text-white tabular-nums">${availableBalance} USDC</span>
+            <span className="font-bold text-white tabular-nums">${(parseFloat(availableBalance) || 0).toFixed(2)} USDC</span>
           </div>
 
           {/* Amount Input */}

@@ -27,7 +27,7 @@ const tabs: TabType[] = [
 ];
 
 const AccountPanel = ({ market }: { market: string }) => {
-  const { balance, totalNum, openDepositModal } = useBalanceContext();
+  const { availableNum, lockedNum, totalNum } = useBalanceContext();
   const [activeTab, setActiveTab] = useState<TabType>("Balances");
   const [position, setPosition] = useState<any | null>(null);
   const [openOrdersList, setOpenOrdersList] = useState<any[]>([]);
@@ -178,8 +178,8 @@ const AccountPanel = ({ market }: { market: string }) => {
     }
   };
 
-  const formattedAvail = balance.availableBalance;
-  const formattedLocked = balance.lockedBalance;
+  const formattedAvail = availableNum.toFixed(2);
+  const formattedLocked = lockedNum.toFixed(2);
   const totalBalance = totalNum.toFixed(2);
 
   return (
