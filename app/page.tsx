@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "./Components/Header";
@@ -187,9 +188,82 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-[#2B2F36] py-5">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-xs text-[#848E9C]">
-          Prices update every 5 seconds.
+      {/* Product showcase */}
+      <section className="w-full overflow-hidden px-4 sm:px-6 pt-10 pb-6 sm:pt-20 sm:pb-10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
+          <span className="rounded-full border border-[#00C076]/30 bg-[#00C076]/10 px-2.5 py-0.5 font-mono text-xs text-[#00C076]">
+            Product
+          </span>
+          <h2 className="mt-4 text-3xl sm:text-5xl font-bold tracking-tight text-white">The Terminal</h2>
+          <p className="mt-3 text-sm sm:text-base text-[#B7BDC6]">
+            Order book, live chart, positions and order entry on one screen.
+          </p>
+
+          <div className="relative mt-8 sm:mt-14 w-full [perspective:2400px]">
+            {/* Soft green glow behind the screenshot */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-2/3 w-2/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00C076]/10 blur-3xl" />
+            <Link
+              href="/trade/SOL"
+              aria-label="Open the trading terminal"
+              className="relative block overflow-hidden rounded-lg border border-[#2B2F36] shadow-2xl shadow-black/60 transition-transform duration-500 md:[transform:rotateX(38deg)_rotateZ(-14deg)_scale(0.92)] md:hover:[transform:rotateX(30deg)_rotateZ(-10deg)_scale(0.94)]"
+            >
+              <Image
+                src="/assets/trading-ui.webp"
+                alt="PERP trading terminal with order book, candlestick chart and order form"
+                width={1917}
+                height={928}
+                sizes="(min-width: 1152px) 1152px, 100vw"
+                className="block h-auto w-full"
+              />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="relative overflow-hidden border-t border-[#2B2F36]">
+        {/* Green glow in the corner, matching the app accent */}
+        <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#00C076]/20 blur-3xl" />
+
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="py-12 sm:py-16">
+            <h2 className="text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight text-white">
+              Start
+              <br />
+              Trading
+            </h2>
+            <p className="mt-4 max-w-sm text-sm text-[#B7BDC6]">
+              Trade SOL and ETH perpetuals on a fast in-memory order book, margined in USDC.
+            </p>
+            <Link
+              href="/trade/SOL"
+              className="group mt-6 inline-flex items-center gap-3 rounded-full border border-[#2B2F36] bg-[#181a20] py-1.5 pl-5 pr-1.5 text-sm font-medium text-white hover:border-[#00C076]/50 transition-colors"
+            >
+              Launch App
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00C076] text-[#0B0E11] transition-transform group-hover:translate-x-0.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </span>
+            </Link>
+          </div>
+
+          <div className="flex flex-col items-center gap-4 border-t border-[#2B2F36] py-6 sm:flex-row sm:justify-between">
+            <span className="text-sm font-semibold tracking-wide text-white">PERP</span>
+            <span className="text-xs text-[#848E9C]">© {new Date().getFullYear()} PERP. All rights reserved.</span>
+            <div className="flex items-center gap-4 text-[#B7BDC6]">
+              <a href="https://x.com/div5533" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="hover:text-white transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              {/* TODO: replace with the real GitHub profile URL */}
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="hover:text-white transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+                </svg>
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
