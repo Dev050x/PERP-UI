@@ -61,8 +61,36 @@ const MarketBar = ({ market }: { market: string }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [baseAsset]);
 
+    const changeColor = stats.isPositive ? "text-[#00C076]" : "text-[#F6465D]";
+
     return (
-        <div className="flex items-center flex-row bg-[#181a20] relative w-full rounded-lg border border-[#2B2F36]/50">
+        <>
+        {/* Mobile */}
+        <div className="lg:hidden relative w-full rounded-lg border border-[#2B2F36]/50 bg-[#181a20] px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+                <div className="relative">
+                    <button
+                        type="button"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="flex items-center gap-2"
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={coinLogo} alt="" width={24} height={24} className="h-6 w-6 rounded-full" />
+                        <span className="text-base font-bold text-white">{displayMarket}</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-[#848E9C] transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}>
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </button>
+                    {isDropdownOpen && (
+                        <MarketDropdown baseAsset={baseAsset} onSelect={() => setIsDropdownOpen(false)} />
+                    )}
+                </div>
+                <div className={`text-xl font-bold tabular-nums ${changeColor}`}>${stats.currentPrice}</div>
+            </div>
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden lg:flex items-center flex-row bg-[#181a20] relative w-full rounded-lg border border-[#2B2F36]/50">
             <div className="flex items-center flex-row no-scrollbar mr-4 ml-4 h-[65px] w-full overflow-auto">
                 <div className="flex justify-between flex-row w-full gap-4">
                     <div className="flex flex-row shrink-0 gap-6">
@@ -94,30 +122,8 @@ const MarketBar = ({ market }: { market: string }) => {
                                 </div>
                             </button>
 
-                            {/* Market Selector Dropdown */}
                             {isDropdownOpen && (
-                                <div className="absolute top-full left-0 mt-2 w-44 bg-[#181a20] border border-[#2B2F36] rounded-xl shadow-2xl z-50 flex flex-col p-1.5">
-                                    <Link
-                                        href="/trade/SOL"
-                                        onClick={() => setIsDropdownOpen(false)}
-                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
-                                            baseAsset === "SOL" ? "bg-[#2B2F36] text-[#00C076]" : "text-[#EAECEF] hover:bg-[#2B2F36]/50"
-                                        }`}
-                                    >
-                                        <img src="/coins/sol.png" alt="SOL" className="w-5 h-5 rounded-full" />
-                                        <span>SOL-PERP</span>
-                                    </Link>
-                                    <Link
-                                        href="/trade/ETH"
-                                        onClick={() => setIsDropdownOpen(false)}
-                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
-                                            baseAsset === "ETH" ? "bg-[#2B2F36] text-[#00C076]" : "text-[#EAECEF] hover:bg-[#2B2F36]/50"
-                                        }`}
-                                    >
-                                        <img src="/coins/eth.png" alt="ETH" className="w-5 h-5 rounded-full" />
-                                        <span>ETH-PERP</span>
-                                    </Link>
-                                </div>
+                                <MarketDropdown baseAsset={baseAsset} onSelect={() => setIsDropdownOpen(false)} />
                             )}
                         </div>
                         <div className="flex items-center flex-row flex-wrap gap-x-8">
@@ -175,8 +181,28 @@ const MarketBar = ({ market }: { market: string }) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
+
+const MarketDropdown = ({ baseAsset, onSelect }: { baseAsset: string; onSelect: () => void }) => (
+    <div className="absolute top-full left-0 mt-2 w-44 bg-[#181a20] border border-[#2B2F36] rounded-xl shadow-2xl z-50 flex flex-col p-1.5">
+        {["SOL", "ETH"].map((sym) => (
+            <Link
+                key={sym}
+                href={`/trade/${sym}`}
+                onClick={onSelect}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+                    baseAsset === sym ? "bg-[#2B2F36] text-[#00C076]" : "text-[#EAECEF] hover:bg-[#2B2F36]/50"
+                }`}
+            >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/coins/${sym.toLowerCase()}.png`} alt={sym} className="w-5 h-5 rounded-full" />
+                <span>{sym}-PERP</span>
+            </Link>
+        ))}
+    </div>
+);
 
 export default MarketBar;
 
