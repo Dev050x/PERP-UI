@@ -143,6 +143,7 @@ export interface MarketStats24h {
     change: number;
     changePercent: number;
     volumeUsd: number;
+    closes: number[]; // hourly closes over the window, ending with lastPrice
 }
 
 // Returns null when the market has no trades or depth to derive a price from
@@ -185,5 +186,6 @@ export async function get24hStats(market: string): Promise<MarketStats24h | null
         change,
         changePercent: open > 0 ? (change / open) * 100 : 0,
         volumeUsd,
+        closes: [...valid.map((c) => parseFloat(c.close)), lastPrice],
     };
 }

@@ -49,22 +49,25 @@ const Header = () => {
                     {/* Navigation */}
                     <div className="flex items-center flex-row">
                         <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 hover:opacity-90 shrink-0 text-white">
-                            Exchange
+                            PERP
                         </Link>
-                        <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold mx-4 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
+                        <Link href="/" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 sm:ml-6 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
+                            Markets
+                        </Link>
+                        <Link href="/trade/SOL" className="flex items-center justify-center h-8 text-sm font-semibold ml-4 hover:opacity-90 shrink-0 text-[#848E9C] hover:text-white transition-colors">
                             Trade
                         </Link>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-end gap-4 mx-4">
+                    <div className="flex items-center justify-end gap-2 sm:gap-4 mx-4">
                         {loggedIn ? (
                             <>
                                 {/* Deposit Button */}
                                 <button
                                     type="button"
                                     onClick={openDepositModal}
-                                    className="rounded-lg bg-[#202127] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                                    className="hidden sm:block rounded-lg bg-[#202127] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                                 >
                                     Deposit
                                 </button>
@@ -73,7 +76,7 @@ const Header = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsWithdrawOpen(true)}
-                                    className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-[#14151b] hover:opacity-90 transition-opacity"
+                                    className="hidden sm:block rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-[#14151b] hover:opacity-90 transition-opacity"
                                 >
                                     Withdraw
                                 </button>
@@ -88,13 +91,13 @@ const Header = () => {
                                         <div className="w-4 h-4 rounded-full bg-[#00C076]/20 text-[#00C076] flex items-center justify-center">
                                             <UserIcon />
                                         </div>
-                                        <span>Profile</span>
+                                        <span className="hidden sm:inline">Profile</span>
                                         <span className="text-[10px] text-[#848E9C]">▼</span>
                                     </button>
 
                                     {/* Profile Dropdown Menu */}
                                     {isProfileOpen && (
-                                        <div className="absolute right-0 mt-2 w-72 bg-[#14161C] border border-[#23262F] rounded-2xl p-4 shadow-2xl z-50 flex flex-col gap-4 animate-fadeIn">
+                                        <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-[#14161C] border border-[#23262F] rounded-2xl p-4 shadow-2xl z-50 flex flex-col gap-4 animate-fadeIn">
                                             {/* User Header */}
                                             <div className="flex items-center gap-3 border-b border-[#2B2F36] pb-3">
                                                 <div className="w-9 h-9 rounded-full bg-[#00C076]/20 text-[#00C076] flex items-center justify-center font-bold">
@@ -163,7 +166,7 @@ const Header = () => {
                             <>
                                 <Link
                                     href="/signin"
-                                    className="rounded-lg bg-[#202127] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2B2F36] transition-colors"
+                                    className="hidden sm:block rounded-lg bg-[#202127] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2B2F36] transition-colors"
                                 >
                                     Deposit
                                 </Link>

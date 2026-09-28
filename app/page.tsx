@@ -1,214 +1,246 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Header from "./Components/Header";
-import { get24hStats } from "./utils/httpClient";
+import { get24hStats, MarketStats24h } from "./utils/httpClient";
 import { usePolling } from "./utils/usePolling";
 
-interface MarketPairData {
+interface MarketInfo {
   symbol: string;
   name: string;
-  baseAsset: string;
+  asset: string;
   logo: string;
-  price: string;
-  change24h: string;
-  high24h: string;
-  low24h: string;
-  volume24h: string;
-  isPositive: boolean;
-  tradeUrl: string;
 }
 
-export default function Home() {
-  const [pairs, setPairs] = useState<MarketPairData[]>([
-    {
-      symbol: "SOL",
-      name: "SOL-PERP",
-      baseAsset: "SOL",
-      logo: "/coins/sol.png",
-      price: "--",
-      change24h: "+0.00%",
-      high24h: "--",
-      low24h: "--",
-      volume24h: "--",
-      isPositive: true,
-      tradeUrl: "/trade/SOL",
-    },
-    {
-      symbol: "ETH",
-      name: "ETH-PERP",
-      baseAsset: "ETH",
-      logo: "/coins/eth.png",
-      price: "--",
-      change24h: "+0.00%",
-      high24h: "--",
-      low24h: "--",
-      volume24h: "--",
-      isPositive: true,
-      tradeUrl: "/trade/ETH",
-    },
-  ]);
+const MARKETS: MarketInfo[] = [
+  { symbol: "SOL", name: "SOL-PERP", asset: "Solana", logo: "/coins/sol.png" },
+  { symbol: "ETH", name: "ETH-PERP", asset: "Ethereum", logo: "/coins/eth.png" },
+];
 
-  const fetchPairStats = async (marketSymbol: string) => {
-    try {
-      const s = await get24hStats(marketSymbol);
-      if (!s) return null;
-      const isPos = s.change >= 0;
-      return {
-        price: s.lastPrice.toFixed(2),
-        change24h: `${isPos ? "+" : ""}${s.changePercent.toFixed(2)}%`,
-        high24h: s.high.toFixed(2),
-        low24h: s.low.toFixed(2),
-        volume24h: s.volumeUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        isPositive: isPos,
-      };
-    } catch (e) {
-      console.error(`Error fetching stats for ${marketSymbol}:`, e);
-      return null;
-    }
-  };
+const formatPrice = (n: number) =>
+  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Compact volume for tight mobile rows: $1.2M, $845.3K
+const formatCompact = (n: number) =>
+  n.toLocaleString("en-US", { notation: "compact", maximumFractionDigits: 1 });
+
+// Grey when there's no data or no movement, so "+0.00%" doesn't read as a gain
+const changeColor = (s?: MarketStats24h) =>
+  !s || s.change === 0 ? "text-[#848E9C]" : s.change > 0 ? "text-[#00C076]" : "text-[#F6465D]";
+
+const formatChange = (s: MarketStats24h) =>
+  `${s.change >= 0 ? "+" : ""}${s.changePercent.toFixed(2)}%`;
+
+export default function Home() {
+  const router = useRouter();
+  const [stats, setStats] = useState<Record<string, MarketStats24h | null>>({});
 
   const updateAllStats = async () => {
-    const [solStats, ethStats] = await Promise.all([fetchPairStats("SOL"), fetchPairStats("ETH")]);
-
-    setPairs((prev) =>
-      prev.map((pair) => {
-        if (pair.symbol === "SOL" && solStats) {
-          return { ...pair, ...solStats };
-        }
-        if (pair.symbol === "ETH" && ethStats) {
-          return { ...pair, ...ethStats };
-        }
-        return pair;
-      })
+    const results = await Promise.all(
+      MARKETS.map((m) =>
+        get24hStats(m.symbol).catch((e) => {
+          console.error(`Error fetching stats for ${m.symbol}:`, e);
+          return undefined;
+        })
+      )
     );
+    setStats((prev) => {
+      const next = { ...prev };
+      // Keep the last good value if a poll fails
+      MARKETS.forEach((m, i) => {
+        if (results[i] !== undefined) next[m.symbol] = results[i];
+      });
+      return next;
+    });
   };
 
   usePolling(updateAllStats, 5000);
 
+  const loaded = MARKETS.some((m) => stats[m.symbol]);
+  const totalVolume = MARKETS.reduce((sum, m) => sum + (stats[m.symbol]?.volumeUsd ?? 0), 0);
+
   return (
-    <div className="bg-[#0B0E11] min-h-screen text-white flex flex-col font-sans">
-      {/* Header Bar */}
-      <div className="bg-[#181a20] sticky top-0 z-20 w-full border-b border-[#2B2F36]/60">
+    <div className="bg-[#0B0E11] min-h-screen text-[#EAECEF] flex flex-col font-sans">
+      <div className="bg-[#181a20] sticky top-0 z-20 w-full border-b border-[#2B2F36]">
         <Header />
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-10 flex flex-col gap-10">
-        {/* Hero Banner */}
-        <section className="flex flex-col items-center text-center gap-4 py-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E2026] border border-[#2B2F36] text-xs text-[#00C076] font-medium">
-            High-Performance Derivatives Exchange
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col gap-6">
+        <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">Markets</h1>
+            <p className="mt-1 text-sm text-[#848E9C]">Perpetual futures, margined and settled in USDC.</p>
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white max-w-2xl">
-            Trade Perpetual Futures with Sub-Millisecond Speed
-          </h1>
-          <p className="text-base text-[#848E9C] max-w-xl">
-            Experience ultra-fast order matching, in-memory execution, deep liquidity, and up to 10x leverage.
-          </p>
+          <dl className="flex gap-6 sm:gap-8 text-sm">
+            <div>
+              <dt className="text-xs text-[#848E9C]">24h volume</dt>
+              <dd className="mt-0.5 font-medium text-white tabular-nums">
+                {loaded ? `$${formatPrice(totalVolume)}` : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[#848E9C]">Markets</dt>
+              <dd className="mt-0.5 font-medium text-white tabular-nums">{MARKETS.length}</dd>
+            </div>
+          </dl>
         </section>
 
-        {/* Markets Table Section */}
-        <section className="bg-[#181a20] rounded-2xl border border-[#2B2F36]/60 overflow-hidden shadow-2xl">
-          <div className="p-6 border-b border-[#2B2F36]/60 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-white">Supported Markets</h2>
-              <p className="text-xs text-[#848E9C] mt-1">Select a perpetual pair to start trading</p>
-            </div>
-            <div className="text-xs text-[#848E9C] bg-[#1E2026] px-3 py-1.5 rounded-lg border border-[#2B2F36]">
-              2 Active Pairs
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#2B2F36]/60 text-xs font-semibold text-[#848E9C]">
-                  <th className="py-4 px-6">Pair</th>
-                  <th className="py-4 px-6 text-right">Last Price</th>
-                  <th className="py-4 px-6 text-right">24H Change</th>
-                  <th className="py-4 px-6 text-right">24H High</th>
-                  <th className="py-4 px-6 text-right">24H Low</th>
-                  <th className="py-4 px-6 text-right">24H Volume (USD)</th>
-                  <th className="py-4 px-6 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#2B2F36]/40">
-                {pairs.map((pair) => (
-                  <tr key={pair.symbol} className="hover:bg-[#1E2026]/50 transition-colors group">
-                    {/* Pair Info */}
-                    <td className="py-5 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#202127] p-1.5 flex items-center justify-center shrink-0 border border-[#2B2F36]">
-                          <img
-                            src={pair.logo}
-                            alt={`${pair.baseAsset} Logo`}
-                            className="w-full h-full object-contain rounded-full"
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-white text-base group-hover:text-[#00C076] transition-colors">
-                            {pair.name}
-                          </span>
-                          <span className="text-xs text-[#848E9C]">Perpetual Contract</span>
-                        </div>
+        <section className="rounded-lg border border-[#2B2F36] bg-[#181a20] overflow-hidden">
+          {/* Desktop / tablet table */}
+          <table className="hidden md:table w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#2B2F36] text-xs text-[#848E9C]">
+                <th className="py-3 pl-5 pr-3 text-left font-medium">Market</th>
+                <th className="py-3 px-3 text-right font-medium">Price</th>
+                <th className="py-3 px-3 text-right font-medium">24h change</th>
+                <th className="hidden lg:table-cell py-3 px-3 text-right font-medium">24h high / low</th>
+                <th className="py-3 px-3 text-right font-medium">24h volume</th>
+                <th className="py-3 px-3 text-right font-medium">Last 24h</th>
+                <th className="py-3 pl-3 pr-5" aria-label="Trade" />
+              </tr>
+            </thead>
+            <tbody>
+              {MARKETS.map((m) => {
+                const s = stats[m.symbol];
+                const href = `/trade/${m.symbol}`;
+                return (
+                  <tr
+                    key={m.symbol}
+                    onClick={() => router.push(href)}
+                    className="border-b border-[#2B2F36]/60 last:border-0 hover:bg-[#1E2026] cursor-pointer transition-colors"
+                  >
+                    <td className="py-4 pl-5 pr-3">
+                      <MarketLabel market={m} />
+                    </td>
+                    <td className="py-4 px-3 text-right font-medium text-white tabular-nums">
+                      {s ? `$${formatPrice(s.lastPrice)}` : <Placeholder />}
+                    </td>
+                    <td className={`py-4 px-3 text-right font-medium tabular-nums ${changeColor(s ?? undefined)}`}>
+                      {s ? formatChange(s) : <Placeholder />}
+                    </td>
+                    <td className="hidden lg:table-cell py-4 px-3 text-right tabular-nums text-[#B7BDC6]">
+                      {s ? `${formatPrice(s.high)} / ${formatPrice(s.low)}` : <Placeholder />}
+                    </td>
+                    <td className="py-4 px-3 text-right tabular-nums text-[#B7BDC6]">
+                      {s ? `$${formatPrice(s.volumeUsd)}` : <Placeholder />}
+                    </td>
+                    <td className="py-4 px-3">
+                      <div className="flex justify-end">
+                        <Sparkline values={s?.closes} positive={(s?.change ?? 0) >= 0} />
                       </div>
                     </td>
-
-                    {/* Last Price */}
-                    <td className="py-5 px-6 text-right font-bold text-white tabular-nums text-base">
-                      ${pair.price}
-                    </td>
-
-                    {/* 24H Change */}
-                    <td className="py-5 px-6 text-right">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-md text-xs font-bold tabular-nums ${
-                          pair.isPositive
-                            ? "bg-[#00C076]/10 text-[#00C076]"
-                            : "bg-[#F6465D]/10 text-[#F6465D]"
-                        }`}
-                      >
-                        {pair.change24h}
-                      </span>
-                    </td>
-
-                    {/* 24H High */}
-                    <td className="py-5 px-6 text-right text-sm font-medium text-[#EAECEF] tabular-nums">
-                      ${pair.high24h}
-                    </td>
-
-                    {/* 24H Low */}
-                    <td className="py-5 px-6 text-right text-sm font-medium text-[#EAECEF] tabular-nums">
-                      ${pair.low24h}
-                    </td>
-
-                    {/* 24H Volume */}
-                    <td className="py-5 px-6 text-right text-sm font-medium text-[#EAECEF] tabular-nums">
-                      ${pair.volume24h}
-                    </td>
-
-                    {/* Action Button */}
-                    <td className="py-5 px-6 text-right">
+                    <td className="py-4 pl-3 pr-5 text-right">
                       <Link
-                        href={pair.tradeUrl}
-                        className="inline-flex items-center justify-center px-4 py-2 bg-[#00C076] hover:bg-[#00A865] text-black font-bold text-xs rounded-xl transition-all shadow-lg hover:shadow-[#00C076]/20"
+                        href={href}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex h-8 items-center rounded-md border border-[#2B2F36] px-3 text-xs font-medium text-white hover:border-[#00C076] hover:text-[#00C076] transition-colors"
                       >
-                        Trade {pair.baseAsset}
+                        Trade
                       </Link>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* Mobile list */}
+          <ul className="md:hidden divide-y divide-[#2B2F36]/60">
+            <li className="flex items-center justify-between px-4 py-2.5 text-xs text-[#848E9C]">
+              <span>Market / 24h vol</span>
+              <span>Price / 24h change</span>
+            </li>
+            {MARKETS.map((m) => {
+              const s = stats[m.symbol];
+              return (
+                <li key={m.symbol}>
+                  <Link
+                    href={`/trade/${m.symbol}`}
+                    className="flex items-center gap-3 px-4 py-3.5 active:bg-[#1E2026]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <MarketLabel market={m} subtitle={s ? `$${formatCompact(s.volumeUsd)} vol` : undefined} />
+                    </div>
+                    <div className="hidden min-[380px]:block">
+                      <Sparkline values={s?.closes} positive={(s?.change ?? 0) >= 0} width={64} />
+                    </div>
+                    <div className="w-24 text-right tabular-nums">
+                      <div className="text-sm font-medium text-white">
+                        {s ? `$${formatPrice(s.lastPrice)}` : <Placeholder />}
+                      </div>
+                      <div className={`mt-0.5 text-xs font-medium ${changeColor(s ?? undefined)}`}>
+                        {s ? formatChange(s) : <Placeholder />}
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[#2B2F36]/60 py-6 text-center text-xs text-[#848E9C]">
-        PERP Exchange — High-Frequency Derivatives Platform
+      <footer className="border-t border-[#2B2F36] py-5">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-xs text-[#5E6673]">
+          Prices update every 5 seconds.
+        </div>
       </footer>
     </div>
   );
 }
+
+const MarketLabel = ({ market, subtitle }: { market: MarketInfo; subtitle?: string }) => (
+  <div className="flex items-center gap-3 min-w-0">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src={market.logo} alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-full" />
+    <div className="min-w-0">
+      <div className="font-medium text-white truncate">{market.name}</div>
+      <div className="text-xs text-[#848E9C] truncate">{subtitle ?? market.asset}</div>
+    </div>
+  </div>
+);
+
+const Placeholder = () => (
+  <span className="inline-block h-3.5 w-14 rounded bg-[#2B2F36] animate-pulse align-middle" />
+);
+
+// Minimal line chart of the last 24h hourly closes
+const Sparkline = ({
+  values,
+  positive,
+  width = 96,
+  height = 32,
+}: {
+  values?: number[];
+  positive: boolean;
+  width?: number;
+  height?: number;
+}) => {
+  if (!values || values.length < 2 || values.every((v) => v === values[0])) {
+    return <div style={{ width, height }} className="flex items-center"><div className="h-px w-full bg-[#2B2F36]" /></div>;
+  }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pad = 2;
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * width;
+      const y = pad + (1 - (v - min) / range) * (height - pad * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={positive ? "#00C076" : "#F6465D"}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+};
