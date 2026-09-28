@@ -253,9 +253,12 @@ export default function Home() {
             </p>
             <Link
               href="/trade/SOL"
-              className="mt-6 inline-flex h-10 items-center rounded-lg bg-white px-5 text-sm font-semibold text-[#14151b] hover:bg-[#EAECEF] transition-colors"
+              className="group mt-6 inline-flex h-10 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-[#14151b] hover:bg-[#EAECEF] transition-colors"
             >
               Launch App
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
             </Link>
           </div>
 
