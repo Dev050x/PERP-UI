@@ -66,7 +66,7 @@ const MarketBar = ({ market }: { market: string }) => {
     return (
         <>
         {/* Mobile */}
-        <div className="lg:hidden relative w-full rounded-lg border border-[#2B2F36]/50 bg-[#181a20] px-3 py-3">
+        <div className="lg:hidden relative w-full rounded-lg border border-[#2B2F36]/50 bg-[#181a20] px-3 py-2">
             <div className="flex items-center justify-between gap-3">
                 <div className="relative">
                     <button
@@ -75,8 +75,8 @@ const MarketBar = ({ market }: { market: string }) => {
                         className="flex items-center gap-2"
                     >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={coinLogo} alt="" width={24} height={24} className="h-6 w-6 rounded-full" />
-                        <span className="text-base font-bold text-white">{displayMarket}</span>
+                        <img src={coinLogo} alt="" width={20} height={20} className="h-5 w-5 rounded-full" />
+                        <span className="text-sm font-bold text-white">{displayMarket}</span>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-[#848E9C] transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}>
                             <path d="m6 9 6 6 6-6" />
                         </svg>
@@ -86,8 +86,8 @@ const MarketBar = ({ market }: { market: string }) => {
                     )}
                 </div>
                 <div className="text-right">
-                    <div className={`text-xl font-bold leading-tight tabular-nums ${changeColor}`}>${stats.currentPrice}</div>
-                    <div className={`text-xs font-semibold tabular-nums ${changeColor}`}>
+                    <div className={`text-base font-bold leading-tight tabular-nums ${changeColor}`}>${stats.currentPrice}</div>
+                    <div className={`text-[11px] font-medium tabular-nums ${changeColor}`}>
                         {stats.priceChange24h} ({stats.priceChangePercent})
                     </div>
                 </div>
