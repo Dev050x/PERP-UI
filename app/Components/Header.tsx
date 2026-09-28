@@ -2,15 +2,24 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useBalanceContext } from "../context/BalanceContext";
-import { getToken, removeAuthData } from "../utils/auth";
+import { getToken, getUserId, removeAuthData } from "../utils/auth";
 import WithdrawModal from "./Modals/WithdrawModal";
 
 const UserIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
     <circle cx="12" cy="7" r="4" />
   </svg>
 );
+
+const ChevronIcon = ({ open }: { open: boolean }) => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-[#848E9C] transition-transform ${open ? "rotate-180" : ""}`}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+const formatUsd = (n: number) =>
+  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const Header = () => {
     const { balance, availableNum, lockedNum, totalNum, openDepositModal } = useBalanceContext();
@@ -18,6 +27,8 @@ const Header = () => {
     const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const userId = loggedIn ? getUserId() : null;
+    const shortUserId = userId ? `${userId.slice(0, 4)}…${userId.slice(-4)}` : null;
 
     useEffect(() => {
         const token = getToken();
@@ -81,83 +92,74 @@ const Header = () => {
                                     Withdraw
                                 </button>
 
-                                {/* Profile Dropdown Container */}
+                                {/* Account menu */}
                                 <div className="relative" ref={dropdownRef}>
                                     <button
                                         type="button"
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className="rounded-lg bg-[#202127] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer"
+                                        aria-expanded={isProfileOpen}
+                                        className="flex h-8 items-center gap-2 rounded-lg bg-[#202127] pl-2 pr-2.5 text-sm text-white hover:bg-[#2B2F36] transition-colors"
                                     >
-                                        <div className="w-4 h-4 rounded-full bg-[#00C076]/20 text-[#00C076] flex items-center justify-center">
+                                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#2B2F36] text-[#B7BDC6]">
                                             <UserIcon />
-                                        </div>
-                                        <span className="hidden sm:inline">Profile</span>
-                                        <span className="text-[10px] text-[#848E9C]">▼</span>
+                                        </span>
+                                        <span className="hidden sm:inline font-medium tabular-nums">${formatUsd(totalNum)}</span>
+                                        <ChevronIcon open={isProfileOpen} />
                                     </button>
 
-                                    {/* Profile Dropdown Menu */}
                                     {isProfileOpen && (
-                                        <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-[#14161C] border border-[#23262F] rounded-2xl p-4 shadow-2xl z-50 flex flex-col gap-4 animate-fadeIn">
-                                            {/* User Header */}
-                                            <div className="flex items-center gap-3 border-b border-[#2B2F36] pb-3">
-                                                <div className="w-9 h-9 rounded-full bg-[#00C076]/20 text-[#00C076] flex items-center justify-center font-bold">
-                                                    <UserIcon />
+                                        <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-[#2B2F36] bg-[#181a20] shadow-xl z-50">
+                                            <div className="px-4 pt-3 pb-4">
+                                                <div className="text-xs text-[#848E9C]">
+                                                    Account{shortUserId && <span className="text-[#5E6673]"> · {shortUserId}</span>}
                                                 </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-white">Account Profile</span>
-                                                    <span className="text-[11px] text-[#848E9C]">PERP Exchange Trader</span>
+                                                <div className="mt-3 text-xs text-[#848E9C]">Total balance</div>
+                                                <div className="mt-0.5 text-xl font-semibold text-white tabular-nums">
+                                                    ${formatUsd(totalNum)} <span className="text-xs font-normal text-[#848E9C]">USDC</span>
+                                                </div>
+                                                <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                                                    <div>
+                                                        <dt className="text-[#848E9C]">Available</dt>
+                                                        <dd className="mt-0.5 text-white tabular-nums">${formatUsd(availableNum)}</dd>
+                                                    </div>
+                                                    <div>
+                                                        <dt className="text-[#848E9C]">In orders</dt>
+                                                        <dd className="mt-0.5 text-white tabular-nums">${formatUsd(lockedNum)}</dd>
+                                                    </div>
+                                                </dl>
+
+                                                {/* The header buttons are hidden on phones, so offer them here */}
+                                                <div className="mt-4 grid grid-cols-2 gap-2 sm:hidden">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setIsProfileOpen(false);
+                                                            openDepositModal();
+                                                        }}
+                                                        className="h-8 rounded-md bg-[#00C076] text-xs font-semibold text-[#0B0E11] hover:bg-[#00A865] transition-colors"
+                                                    >
+                                                        Deposit
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setIsProfileOpen(false);
+                                                            setIsWithdrawOpen(true);
+                                                        }}
+                                                        className="h-8 rounded-md border border-[#2B2F36] text-xs font-semibold text-white hover:bg-[#2B2F36] transition-colors"
+                                                    >
+                                                        Withdraw
+                                                    </button>
                                                 </div>
                                             </div>
 
-                                            {/* USDC Balances Section */}
-                                            <div className="flex flex-col gap-2 bg-[#1E2026] p-3 rounded-xl border border-[#2B2F36]">
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-[#848E9C]">Total Balance</span>
-                                                    <span className="font-bold text-white tabular-nums">${totalNum.toFixed(2)} USDC</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-[#848E9C]">Available Balance</span>
-                                                    <span className="font-semibold text-[#00C076] tabular-nums">${availableNum.toFixed(2)} USDC</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="text-[#848E9C]">Locked Balance</span>
-                                                    <span className="font-medium text-[#EAECEF] tabular-nums">${lockedNum.toFixed(2)} USDC</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Action Options */}
-                                            <div className="flex flex-col gap-1.5 pt-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setIsProfileOpen(false);
-                                                        openDepositModal();
-                                                    }}
-                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-white hover:bg-[#2B2F36] rounded-lg transition-colors flex items-center justify-between"
-                                                >
-                                                    <span>Deposit USDC</span>
-                                                    <span className="text-[#00C076]">+</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setIsProfileOpen(false);
-                                                        setIsWithdrawOpen(true);
-                                                    }}
-                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-white hover:bg-[#2B2F36] rounded-lg transition-colors flex items-center justify-between"
-                                                >
-                                                    <span>Withdraw USDC</span>
-                                                    <span className="text-[#848E9C]">→</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={handleLogout}
-                                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-[#F6465D] hover:bg-[#3B171E] rounded-lg transition-colors flex items-center justify-between mt-1 border-t border-[#2B2F36]/60 pt-2.5"
-                                                >
-                                                    <span>Logout</span>
-                                                    <span>➔</span>
-                                                </button>
-                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleLogout}
+                                                className="w-full border-t border-[#2B2F36] px-4 py-2.5 text-left text-sm text-[#B7BDC6] hover:bg-[#1E2026] hover:text-white transition-colors rounded-b-lg"
+                                            >
+                                                Log out
+                                            </button>
                                         </div>
                                     )}
                                 </div>
