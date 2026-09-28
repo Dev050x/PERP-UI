@@ -74,8 +74,8 @@ export default function Home() {
   const totalVolume = MARKETS.reduce((sum, m) => sum + (stats[m.symbol]?.volumeUsd ?? 0), 0);
 
   return (
-    <div className="bg-[#0B0E11] min-h-screen text-[#EAECEF] flex flex-col font-sans">
-      <div className="bg-[#181a20] sticky top-0 z-20 w-full border-b border-[#2B2F36]">
+    <div className="bg-[#181a20] min-h-screen text-[#EAECEF] flex flex-col font-sans">
+      <div className="bg-[#181a20] sticky top-0 z-20 w-full">
         <Header />
       </div>
 
@@ -91,13 +91,13 @@ export default function Home() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/trade/SOL"
-              className="inline-flex h-11 items-center rounded-md bg-[#00C076] px-6 text-sm font-semibold text-[#0B0E11] hover:bg-[#00A865] transition-colors"
+              className="inline-flex h-10 items-center rounded-lg bg-white px-5 text-sm font-semibold text-[#14151b] hover:bg-[#EAECEF] transition-colors"
             >
               Start Trading
             </Link>
             <a
               href="#markets"
-              className="inline-flex h-11 items-center rounded-md border border-[#2B2F36] px-6 text-sm font-semibold text-white hover:bg-[#1E2026] transition-colors"
+              className="inline-flex h-10 items-center rounded-lg bg-[#2B2F36] px-5 text-sm font-semibold text-white hover:bg-[#363A45] transition-colors"
             >
               View Markets
             </a>
@@ -109,9 +109,9 @@ export default function Home() {
           <Link
             href="/trade/SOL"
             aria-label="Open the trading terminal"
-            className="block h-[200px] sm:h-[340px] lg:h-[420px] overflow-hidden rounded-t-2xl border border-b-0 border-[#2B2F36] bg-[#14161C] p-1.5 sm:p-2 pb-0 sm:pb-0"
+            className="relative block h-[200px] sm:h-[340px] lg:h-[420px] overflow-hidden rounded-t-2xl border border-b-0 border-white/10 bg-[#1E2026] p-1.5 sm:p-2 pb-0 sm:pb-0"
           >
-            <div className="overflow-hidden rounded-t-xl border border-b-0 border-[#2B2F36]">
+            <div className="overflow-hidden rounded-t-xl border border-b-0 border-white/5">
               <Image
                 src="/assets/trading-ui.webp"
                 alt="PERP trading terminal with order book, candlestick chart and order form"
@@ -122,11 +122,13 @@ export default function Home() {
                 className="block h-auto w-full"
               />
             </div>
+            {/* Fade the cropped bottom into the page */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-[#181a20]" />
           </Link>
         </section>
 
         {/* Stats bar */}
-        <section className="border-y border-[#2B2F36] bg-[#0B0E11]">
+        <section className="border-y border-white/5">
           <dl className="mx-auto grid max-w-4xl grid-cols-2 sm:grid-cols-4 px-4 py-6 sm:py-8">
             {[
               { label: "24h Volume", value: loaded ? `$${formatCompact(totalVolume)}` : "—" },
@@ -137,8 +139,8 @@ export default function Home() {
               <div
                 key={stat.label}
                 className={`flex flex-col-reverse items-center py-3 sm:py-0 ${
-                  i > 0 ? "sm:border-l border-[#2B2F36]" : ""
-                } ${i % 2 === 1 ? "border-l sm:border-l" : ""}`}
+                  i > 0 ? "sm:border-l border-white/5" : ""
+                } ${i % 2 === 1 ? "border-l border-white/5" : ""}`}
               >
                 <dt className="mt-1 text-sm text-[#B7BDC6]">{stat.label}</dt>
                 <dd className="text-2xl sm:text-3xl font-semibold text-white tabular-nums">{stat.value}</dd>
@@ -150,11 +152,11 @@ export default function Home() {
 
       <div id="markets" className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-10 sm:pb-16 scroll-mt-16">
         <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white">Markets</h2>
-        <section className="rounded-lg border border-[#2B2F36] bg-[#181a20] overflow-hidden">
+        <section className="rounded-lg border border-white/5 bg-[#1E2026] overflow-hidden">
           {/* Desktop / tablet table */}
           <table className="hidden md:table w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2B2F36] text-xs text-[#B7BDC6]">
+              <tr className="border-b border-white/5 text-xs text-[#B7BDC6]">
                 <th className="py-3 pl-5 pr-3 text-left font-medium">Market</th>
                 <th className="py-3 px-3 text-right font-medium">Price</th>
                 <th className="py-3 px-3 text-right font-medium">24h change</th>
@@ -172,7 +174,7 @@ export default function Home() {
                   <tr
                     key={m.symbol}
                     onClick={() => router.push(href)}
-                    className="border-b border-[#2B2F36]/60 last:border-0 hover:bg-[#1E2026] cursor-pointer transition-colors"
+                    className="border-b border-white/5 last:border-0 hover:bg-[#2B2F36]/60 cursor-pointer transition-colors"
                   >
                     <td className="py-4 pl-5 pr-3">
                       <MarketLabel market={m} />
@@ -196,7 +198,7 @@ export default function Home() {
                       <Link
                         href={href}
                         onClick={(e) => e.stopPropagation()}
-                        className="inline-flex h-8 items-center rounded-md border border-[#2B2F36] px-3 text-xs font-medium text-white hover:border-[#00C076] hover:text-[#00C076] transition-colors"
+                        className="inline-flex h-8 items-center rounded-md bg-[#2B2F36] px-3 text-xs font-semibold text-white hover:bg-[#363A45] transition-colors"
                       >
                         Trade
                       </Link>
@@ -208,7 +210,7 @@ export default function Home() {
           </table>
 
           {/* Mobile list */}
-          <ul className="md:hidden divide-y divide-[#2B2F36]/60">
+          <ul className="md:hidden divide-y divide-white/5">
             <li className="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-[#B7BDC6]">
               <span className="flex-1">Market</span>
               <span className="w-24 shrink-0 text-right">Price</span>
@@ -220,7 +222,7 @@ export default function Home() {
                 <li key={m.symbol}>
                   <Link
                     href={`/trade/${m.symbol}`}
-                    className="flex items-center gap-3 px-4 py-3.5 active:bg-[#1E2026]"
+                    className="flex items-center gap-3 px-4 py-3.5 active:bg-[#2B2F36]/60"
                   >
                     <div className="min-w-0 flex-1">
                       <MarketLabel market={m} subtitle={s ? `$${formatCompact(s.volumeUsd)} vol` : undefined} />
@@ -237,11 +239,9 @@ export default function Home() {
         </section>
       </div>
 
-      <footer className="relative overflow-hidden border-t border-[#2B2F36]">
-        {/* Green glow in the corner, matching the app accent */}
-        <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#00C076]/20 blur-3xl" />
+      <footer className="border-t border-white/5">
 
-        <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="py-12 sm:py-16">
             <h2 className="text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight text-white">
               Start
@@ -253,13 +253,13 @@ export default function Home() {
             </p>
             <Link
               href="/trade/SOL"
-              className="mt-6 inline-flex h-11 items-center rounded-md bg-[#00C076] px-6 text-sm font-semibold text-[#0B0E11] hover:bg-[#00A865] transition-colors"
+              className="mt-6 inline-flex h-10 items-center rounded-lg bg-white px-5 text-sm font-semibold text-[#14151b] hover:bg-[#EAECEF] transition-colors"
             >
               Launch App
             </Link>
           </div>
 
-          <div className="flex flex-col items-center gap-4 border-t border-[#2B2F36] py-6 sm:flex-row sm:justify-between">
+          <div className="flex flex-col items-center gap-4 border-t border-white/5 py-6 sm:flex-row sm:justify-between">
             <span className="text-sm font-semibold tracking-wide text-white">PERP</span>
             <span className="text-xs text-[#848E9C]">© {new Date().getFullYear()} PERP. All rights reserved.</span>
             <div className="flex items-center gap-4 text-[#B7BDC6]">
