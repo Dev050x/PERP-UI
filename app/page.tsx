@@ -1,8 +1,9 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Header from "./Components/Header";
-import { getDepth, getKlines, getTrades } from "./utils/httpClient";
+import { get24hStats } from "./utils/httpClient";
+import { usePolling } from "./utils/usePolling";
 
 interface MarketPairData {
   symbol: string;
@@ -50,69 +51,15 @@ export default function Home() {
 
   const fetchPairStats = async (marketSymbol: string) => {
     try {
-      const [tradesData, candlesData, depthData] = await Promise.all([
-        getTrades(marketSymbol, "50").catch(() => []),
-        getKlines(marketSymbol, "1d", undefined, 30).catch(() => []),
-        getDepth(marketSymbol).catch(() => null),
-      ]);
-
-      const trades = Array.isArray(tradesData) ? tradesData : [];
-      const candles = Array.isArray(candlesData) ? candlesData : [];
-
-      let lastPriceNum = 0;
-      if (trades.length > 0 && trades[0].price) {
-        lastPriceNum = parseFloat(trades[0].price);
-      } else if (depthData && (depthData.bids?.length || depthData.asks?.length)) {
-        const bestBid = depthData.bids?.[0] ? parseFloat(depthData.bids[0][0]) : 0;
-        const bestAsk = depthData.asks?.[0] ? parseFloat(depthData.asks[0][0]) : 0;
-        if (bestBid && bestAsk) lastPriceNum = (bestBid + bestAsk) / 2;
-        else lastPriceNum = bestBid || bestAsk;
-      }
-
-      if (!lastPriceNum || isNaN(lastPriceNum)) return null;
-
-      let high = lastPriceNum;
-      let low = lastPriceNum;
-      let totalVolume = 0;
-      let openPrice = lastPriceNum;
-
-      if (trades.length > 0) {
-        trades.forEach((t) => {
-          const p = parseFloat(t.price || "0");
-          const q = parseFloat(t.quantity || "0");
-          if (p > high) high = p;
-          if (p < low && p > 0) low = p;
-          totalVolume += p * q;
-        });
-        const lastTradePrice = parseFloat(trades[trades.length - 1].price || "0");
-        if (lastTradePrice > 0) openPrice = lastTradePrice;
-      }
-
-      if (candles.length > 0) {
-        const latestCandle = candles[candles.length - 1];
-        if (latestCandle) {
-          const cHigh = parseFloat(latestCandle.high || "0");
-          const cLow = parseFloat(latestCandle.low || "0");
-          const cOpen = parseFloat(latestCandle.open || "0");
-          const cVol = parseFloat(latestCandle.quoteVolume || latestCandle.volume || "0");
-
-          if (cHigh > high) high = cHigh;
-          if (cLow < low && cLow > 0) low = cLow;
-          if (cOpen > 0) openPrice = cOpen;
-          if (cVol > 0) totalVolume = Math.max(totalVolume, cVol);
-        }
-      }
-
-      const priceDiff = lastPriceNum - openPrice;
-      const percentChange = openPrice > 0 ? (priceDiff / openPrice) * 100 : 0;
-      const isPos = priceDiff >= 0;
-
+      const s = await get24hStats(marketSymbol);
+      if (!s) return null;
+      const isPos = s.change >= 0;
       return {
-        price: lastPriceNum.toFixed(2),
-        change24h: `${isPos ? "+" : ""}${percentChange.toFixed(2)}%`,
-        high24h: high.toFixed(2),
-        low24h: low.toFixed(2),
-        volume24h: totalVolume > 0 ? totalVolume.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "0.00",
+        price: s.lastPrice.toFixed(2),
+        change24h: `${isPos ? "+" : ""}${s.changePercent.toFixed(2)}%`,
+        high24h: s.high.toFixed(2),
+        low24h: s.low.toFixed(2),
+        volume24h: s.volumeUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         isPositive: isPos,
       };
     } catch (e) {
@@ -122,8 +69,7 @@ export default function Home() {
   };
 
   const updateAllStats = async () => {
-    const solStats = await fetchPairStats("SOL");
-    const ethStats = await fetchPairStats("ETH");
+    const [solStats, ethStats] = await Promise.all([fetchPairStats("SOL"), fetchPairStats("ETH")]);
 
     setPairs((prev) =>
       prev.map((pair) => {
@@ -138,11 +84,7 @@ export default function Home() {
     );
   };
 
-  useEffect(() => {
-    updateAllStats();
-    const interval = setInterval(updateAllStats, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  usePolling(updateAllStats, 5000);
 
   return (
     <div className="bg-[#0B0E11] min-h-screen text-white flex flex-col font-sans">

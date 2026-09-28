@@ -19,7 +19,7 @@ const TradePage = () => {
             <div className="flex flex-row h-full w-full flex-1 gap-1 px-2">
               <div className="flex flex-col flex-1 gap-1">
                 <div className="bg-[#181a20] rounded-[8px] ">
-                  <MarketBar market={market as string}/>
+                  <MarketBar key={market as string} market={market as string}/>
                 </div>
                 <div className="flex flex-row flex-1 gap-1">
                   <div className="w-[340px] bg-[#181a20] rounded-[8px] h-[810px]">

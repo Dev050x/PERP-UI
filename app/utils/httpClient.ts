@@ -177,3 +177,56 @@ export async function getFillsApi() {
         throw err;
     }
 }
+// 24h Market Stats
+export interface MarketStats24h {
+    lastPrice: number;
+    open: number;
+    high: number;
+    low: number;
+    change: number;
+    changePercent: number;
+    volumeUsd: number;
+}
+
+// Returns null when the market has no trades or depth to derive a price from
+export async function get24hStats(market: string): Promise<MarketStats24h | null> {
+    const baseMarket = market.split("_")[0];
+    // `limit` alone returns the oldest candles, so bound the window with startTime
+    const startTime = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+    const [trades, candles] = await Promise.all([
+        getTrades(baseMarket, "1").catch(() => [] as Trade[]),
+        getKlines(baseMarket, "1h", startTime, 24).catch(() => [] as Kline[]),
+    ]);
+
+    let lastPrice = parseFloat(Array.isArray(trades) ? trades[0]?.price ?? "0" : "0");
+    if (!(lastPrice > 0)) {
+        const depth = await getDepth(baseMarket).catch(() => null);
+        const bestBid = parseFloat(depth?.bids[0]?.[0] ?? "0");
+        const bestAsk = parseFloat(depth?.asks[0]?.[0] ?? "0");
+        lastPrice = bestBid && bestAsk ? (bestBid + bestAsk) / 2 : bestBid || bestAsk;
+    }
+    if (!(lastPrice > 0)) return null;
+
+    // Hours without trades come back as all-zero candles
+    const valid = (Array.isArray(candles) ? candles : []).filter((c) => parseFloat(c.open) > 0);
+    const open = valid.length > 0 ? parseFloat(valid[0].open) : lastPrice;
+    let high = lastPrice;
+    let low = lastPrice;
+    let volumeUsd = 0;
+    for (const c of valid) {
+        high = Math.max(high, parseFloat(c.high));
+        low = Math.min(low, parseFloat(c.low));
+        volumeUsd += parseFloat(c.volume || "0") * parseFloat(c.close);
+    }
+
+    const change = lastPrice - open;
+    return {
+        lastPrice,
+        open,
+        high,
+        low,
+        change,
+        changePercent: open > 0 ? (change / open) * 100 : 0,
+        volumeUsd,
+    };
+}

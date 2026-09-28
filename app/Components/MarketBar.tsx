@@ -1,6 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { getDepth, getKlines, getTrades } from "../utils/httpClient";
+import Link from "next/link";
+import { get24hStats } from "../utils/httpClient";
+import { usePolling } from "../utils/usePolling";
+
+const MARKET_STATS_POLL_MS = 3000;
 
 interface MarketStats {
     currentPrice: string;
@@ -31,72 +35,16 @@ const MarketBar = ({ market }: { market: string }) => {
 
     const fetchMarketStats = async () => {
         try {
-            const [tradesData, candlesData, depthData] = await Promise.all([
-                getTrades(baseAsset, "100").catch(() => []),
-                getKlines(baseAsset, "1d", undefined, 50).catch(() => []),
-                getDepth(baseAsset).catch(() => null),
-            ]);
-
-            const trades = Array.isArray(tradesData) ? tradesData : [];
-            const candles = Array.isArray(candlesData) ? candlesData : [];
-
-            // 1. Current Price calculation
-            let lastPriceNum = 0;
-            if (trades.length > 0 && trades[0].price) {
-                lastPriceNum = parseFloat(trades[0].price);
-            } else if (depthData && (depthData.bids?.length || depthData.asks?.length)) {
-                const bestBid = depthData.bids?.[0] ? parseFloat(depthData.bids[0][0]) : 0;
-                const bestAsk = depthData.asks?.[0] ? parseFloat(depthData.asks[0][0]) : 0;
-                if (bestBid && bestAsk) lastPriceNum = (bestBid + bestAsk) / 2;
-                else lastPriceNum = bestBid || bestAsk;
-            }
-
-            if (!lastPriceNum || isNaN(lastPriceNum)) return;
-
-            // 2. High, Low, Volume, Open Price calculation
-            let high = lastPriceNum;
-            let low = lastPriceNum;
-            let totalVolume = 0;
-            let openPrice = lastPriceNum;
-
-            if (trades.length > 0) {
-                trades.forEach((t) => {
-                    const p = parseFloat(t.price || "0");
-                    const q = parseFloat(t.quantity || "0");
-                    if (p > high) high = p;
-                    if (p < low && p > 0) low = p;
-                    totalVolume += p * q;
-                });
-                const lastTradePrice = parseFloat(trades[trades.length - 1].price || "0");
-                if (lastTradePrice > 0) openPrice = lastTradePrice;
-            }
-
-            if (candles.length > 0) {
-                const latestCandle = candles[candles.length - 1];
-                if (latestCandle) {
-                    const cHigh = parseFloat(latestCandle.high || "0");
-                    const cLow = parseFloat(latestCandle.low || "0");
-                    const cOpen = parseFloat(latestCandle.open || "0");
-                    const cVol = parseFloat(latestCandle.quoteVolume || latestCandle.volume || "0");
-
-                    if (cHigh > high) high = cHigh;
-                    if (cLow < low && cLow > 0) low = cLow;
-                    if (cOpen > 0) openPrice = cOpen;
-                    if (cVol > 0) totalVolume = Math.max(totalVolume, cVol);
-                }
-            }
-
-            const priceDiff = lastPriceNum - openPrice;
-            const percentChange = openPrice > 0 ? (priceDiff / openPrice) * 100 : 0;
-            const isPos = priceDiff >= 0;
-
+            const s = await get24hStats(baseAsset);
+            if (!s) return;
+            const isPos = s.change >= 0;
             setStats({
-                currentPrice: lastPriceNum.toFixed(2),
-                priceChange24h: `${isPos ? "+" : ""}${priceDiff.toFixed(2)}`,
-                priceChangePercent: `${isPos ? "+" : ""}${percentChange.toFixed(2)}%`,
-                high24h: high.toFixed(2),
-                low24h: low.toFixed(2),
-                volume24h: totalVolume > 0 ? totalVolume.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "0.00",
+                currentPrice: s.lastPrice.toFixed(2),
+                priceChange24h: `${isPos ? "+" : ""}${s.change.toFixed(2)}`,
+                priceChangePercent: `${isPos ? "+" : ""}${s.changePercent.toFixed(2)}%`,
+                high24h: s.high.toFixed(2),
+                low24h: s.low.toFixed(2),
+                volume24h: s.volumeUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                 isPositive: isPos,
             });
         } catch (e) {
@@ -104,18 +52,14 @@ const MarketBar = ({ market }: { market: string }) => {
         }
     };
 
+    usePolling(fetchMarketStats, MARKET_STATS_POLL_MS, [baseAsset]);
+
     useEffect(() => {
-        fetchMarketStats();
-        const intervalId = setInterval(fetchMarketStats, 2000);
         const handleOrderUpdate = () => fetchMarketStats();
-
         window.addEventListener("orderUpdated", handleOrderUpdate);
-
-        return () => {
-            clearInterval(intervalId);
-            window.removeEventListener("orderUpdated", handleOrderUpdate);
-        };
-    }, [market]);
+        return () => window.removeEventListener("orderUpdated", handleOrderUpdate);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [baseAsset]);
 
     return (
         <div className="flex items-center flex-row bg-[#181a20] relative w-full rounded-lg border border-[#2B2F36]/50">
@@ -153,24 +97,26 @@ const MarketBar = ({ market }: { market: string }) => {
                             {/* Market Selector Dropdown */}
                             {isDropdownOpen && (
                                 <div className="absolute top-full left-0 mt-2 w-44 bg-[#181a20] border border-[#2B2F36] rounded-xl shadow-2xl z-50 flex flex-col p-1.5">
-                                    <a
+                                    <Link
                                         href="/trade/SOL"
+                                        onClick={() => setIsDropdownOpen(false)}
                                         className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                                             baseAsset === "SOL" ? "bg-[#2B2F36] text-[#00C076]" : "text-[#EAECEF] hover:bg-[#2B2F36]/50"
                                         }`}
                                     >
                                         <img src="/coins/sol.png" alt="SOL" className="w-5 h-5 rounded-full" />
                                         <span>SOL-PERP</span>
-                                    </a>
-                                    <a
+                                    </Link>
+                                    <Link
                                         href="/trade/ETH"
+                                        onClick={() => setIsDropdownOpen(false)}
                                         className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                                             baseAsset === "ETH" ? "bg-[#2B2F36] text-[#00C076]" : "text-[#EAECEF] hover:bg-[#2B2F36]/50"
                                         }`}
                                     >
                                         <img src="/coins/eth.png" alt="ETH" className="w-5 h-5 rounded-full" />
                                         <span>ETH-PERP</span>
-                                    </a>
+                                    </Link>
                                 </div>
                             )}
                         </div>

@@ -19,14 +19,11 @@ export interface Depth {
 }
 
 export interface Kline {
-    close: string;
-    end: string;
+    timestamp: number | string; // bucket start (unix seconds/ms or ISO string)
+    open: string;
     high: string;
     low: string;
-    open: string;
-    quoteVolume: string;
-    start: string;
-    trades: string;
+    close: string;
     volume: string;
 }
 
