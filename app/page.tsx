@@ -67,12 +67,14 @@ export default function Home() {
       </div>
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col gap-6">
-        <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">Markets</h1>
-            <p className="mt-1 text-sm text-[#848E9C]">Perpetual futures, margined and settled in USDC.</p>
-          </div>
-          <dl className="flex gap-6 sm:gap-8 text-sm">
+        <section className="flex flex-col items-center text-center gap-5 py-4 sm:py-8">
+          <h1 className="max-w-2xl text-3xl sm:text-5xl font-semibold tracking-tight text-white">
+            Trade Perpetual Futures with Sub-Millisecond Speed
+          </h1>
+          <p className="max-w-xl text-sm sm:text-base text-[#848E9C]">
+            Experience ultra-fast order matching, in-memory execution, deep liquidity, and up to 50x leverage.
+          </p>
+          <dl className="flex justify-center gap-10 text-sm">
             <div>
               <dt className="text-xs text-[#848E9C]">24h volume</dt>
               <dd className="mt-0.5 font-medium text-white tabular-nums">
@@ -96,7 +98,6 @@ export default function Home() {
                 <th className="py-3 px-3 text-right font-medium">24h change</th>
                 <th className="hidden lg:table-cell py-3 px-3 text-right font-medium">24h high / low</th>
                 <th className="py-3 px-3 text-right font-medium">24h volume</th>
-                <th className="py-3 px-3 text-right font-medium">Last 24h</th>
                 <th className="py-3 pl-3 pr-5" aria-label="Trade" />
               </tr>
             </thead>
@@ -124,11 +125,6 @@ export default function Home() {
                     </td>
                     <td className="py-4 px-3 text-right tabular-nums text-[#B7BDC6]">
                       {s ? `$${formatPrice(s.volumeUsd)}` : <Placeholder />}
-                    </td>
-                    <td className="py-4 px-3">
-                      <div className="flex justify-end">
-                        <Sparkline values={s?.closes} positive={(s?.change ?? 0) >= 0} />
-                      </div>
                     </td>
                     <td className="py-4 pl-3 pr-5 text-right">
                       <Link
@@ -162,9 +158,6 @@ export default function Home() {
                     <div className="min-w-0 flex-1">
                       <MarketLabel market={m} subtitle={s ? `$${formatCompact(s.volumeUsd)} vol` : undefined} />
                     </div>
-                    <div className="hidden min-[380px]:block">
-                      <Sparkline values={s?.closes} positive={(s?.change ?? 0) >= 0} width={64} />
-                    </div>
                     <div className="w-24 text-right tabular-nums">
                       <div className="text-sm font-medium text-white">
                         {s ? `$${formatPrice(s.lastPrice)}` : <Placeholder />}
@@ -182,7 +175,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-[#2B2F36] py-5">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-xs text-[#5E6673]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center text-xs text-[#5E6673]">
           Prices update every 5 seconds.
         </div>
       </footer>
@@ -205,42 +198,3 @@ const Placeholder = () => (
   <span className="inline-block h-3.5 w-14 rounded bg-[#2B2F36] animate-pulse align-middle" />
 );
 
-// Minimal line chart of the last 24h hourly closes
-const Sparkline = ({
-  values,
-  positive,
-  width = 96,
-  height = 32,
-}: {
-  values?: number[];
-  positive: boolean;
-  width?: number;
-  height?: number;
-}) => {
-  if (!values || values.length < 2 || values.every((v) => v === values[0])) {
-    return <div style={{ width, height }} className="flex items-center"><div className="h-px w-full bg-[#2B2F36]" /></div>;
-  }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const pad = 2;
-  const points = values
-    .map((v, i) => {
-      const x = (i / (values.length - 1)) * width;
-      const y = pad + (1 - (v - min) / range) * (height - pad * 2);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <polyline
-        points={points}
-        fill="none"
-        stroke={positive ? "#00C076" : "#F6465D"}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-};
