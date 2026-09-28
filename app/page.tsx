@@ -115,8 +115,8 @@ export default function Home() {
               <Image
                 src="/assets/trading-ui.webp"
                 alt="PERP trading terminal with order book, candlestick chart and order form"
-                width={1917}
-                height={928}
+                width={1920}
+                height={935}
                 priority
                 sizes="(min-width: 1024px) 1024px, 100vw"
                 className="block h-auto w-full"
