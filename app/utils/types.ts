@@ -40,3 +40,14 @@ export interface Trade {
     createdAt?: string;
 }
 
+
+export type DepthLevel = [string, string];
+
+// Backend sends both sides in ascending price order; the UI wants best price first
+export function normalizeDepth(bids?: DepthLevel[], asks?: DepthLevel[]) {
+    const valid = (levels?: DepthLevel[]) => (levels ?? []).filter(([, qty]) => parseFloat(qty) > 0);
+    return {
+        bids: valid(bids).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0])),
+        asks: valid(asks).sort((a, b) => parseFloat(a[0]) - parseFloat(b[0])),
+    };
+}

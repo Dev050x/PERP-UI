@@ -1,3 +1,5 @@
+import { normalizeDepth } from "./types";
+
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL!;
 
 export type DepthData = {
@@ -32,10 +34,10 @@ class WebSocketManager {
       this.socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data?.market && data?.depth) {
+          // `depth` is `{}` until the engine has published depth for that market; skip so we don't wipe the REST snapshot
+          if (data?.market && (data?.depth?.bids || data?.depth?.asks)) {
             const market = data.market.toUpperCase();
-            const bids: [string, string][] = data.depth.bids || [];
-            const asks: [string, string][] = data.depth.asks || [];
+            const { bids, asks } = normalizeDepth(data.depth.bids, data.depth.asks);
 
             // Trigger callbacks matching either ETH or ETH_USDC
             this.callbacks.forEach((cbSet, key) => {

@@ -1,11 +1,14 @@
 import axios from "axios";
 import { api, BASE_URL } from "./auth";
-import { Depth, Kline, Ticker, Trade } from "./types";
+import { Depth, Kline, Trade, normalizeDepth } from "./types";
 
 // Market Data Endpoints
 export async function getDepth(market: string): Promise<Depth> {
-    const response = await axios.get(`${BASE_URL}/depth/${market}`);    
-    return response.data;
+    const baseMarket = market.split("_")[0];
+    const response = await axios.get(`${BASE_URL}/depth/${baseMarket}`);
+    // Backend wraps levels in `depth` (API.md shows them top-level)
+    const raw = response.data?.depth ?? response.data;
+    return { ...raw, ...normalizeDepth(raw?.bids, raw?.asks) };
 }
 
 export async function getKlines(market: string, interval: string = "1m", startTime?: string | number, limit: number = 500): Promise<Kline[]> {

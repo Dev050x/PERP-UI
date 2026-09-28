@@ -16,18 +16,11 @@ const OrderBook = ({ market }: { market: string }) => {
         // REST Depth Snapshot
         const fetchDepthSnapshot = async () => {
             try {
-                const depth = await getDepth(market);
-                if (depth) {
-                    const rawAsks = depth.asks || (depth as any)?.depth?.asks || [];
-                    const rawBids = depth.bids || (depth as any)?.depth?.bids || [];
-                    const validAsks = rawAsks.filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
-                    const validBids = rawBids.filter((bid: [string, string]) => parseFloat(bid[1]) > 0).reverse();
-                    setAsks(validAsks);
-                    setBids(validBids);
-                    if (validAsks.length > 0) {
-                        setLastPrice(validAsks[0][0]);
-                    }
-                }
+                const { asks, bids } = await getDepth(market);
+                setAsks(asks);
+                setBids(bids);
+                const best = asks[0]?.[0] ?? bids[0]?.[0];
+                if (best) setLastPrice(best);
             } catch (e) {
                 console.error("Failed to fetch initial depth:", e);
             }
@@ -41,21 +34,11 @@ const OrderBook = ({ market }: { market: string }) => {
         window.addEventListener("orderUpdated", handleOrderUpdate);
 
         // Real-Time WebSocket Depth Stream Subscription
-        const unsubscribe = wsManager.subscribeDepth(market, (data: DepthData) => {
-            if (!data) return;
-            const rawAsks = data.asks || [];
-            const rawBids = data.bids || [];
-            const validAsks = rawAsks.filter((ask: [string, string]) => parseFloat(ask[1]) > 0);
-            const validBids = rawBids.filter((bid: [string, string]) => parseFloat(bid[1]) > 0);
-
-            setAsks(validAsks);
-            setBids(validBids);
-
-            if (validAsks.length > 0) {
-                setLastPrice(validAsks[0][0]);
-            } else if (validBids.length > 0) {
-                setLastPrice(validBids[0][0]);
-            }
+        const unsubscribe = wsManager.subscribeDepth(market, ({ asks, bids }: DepthData) => {
+            setAsks(asks);
+            setBids(bids);
+            const best = asks[0]?.[0] ?? bids[0]?.[0];
+            if (best) setLastPrice(best);
         });
 
         return () => {
